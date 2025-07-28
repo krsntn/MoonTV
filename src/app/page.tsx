@@ -4,6 +4,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 // 客户端收藏 API
@@ -16,15 +17,12 @@ import {
 import { getDoubanCategories } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
 
-import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
-import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import { useSite } from '@/components/SiteProvider';
 import VideoCard from '@/components/VideoCard';
 
 function HomeClient() {
-  const [activeTab, setActiveTab] = useState<'home' | 'favorites'>('home');
   const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
   const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
@@ -32,6 +30,8 @@ function HomeClient() {
   const { announcement } = useSite();
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  const searchParams = useSearchParams();
 
   // 检查公告弹窗状态
   useEffect(() => {
@@ -129,7 +129,7 @@ function HomeClient() {
 
   // 当切换到收藏夹时加载收藏数据
   useEffect(() => {
-    if (activeTab !== 'favorites') return;
+    if (searchParams.get('type') !== 'favorites') return;
 
     const loadFavorites = async () => {
       const allFavorites = await getAllFavorites();
@@ -147,7 +147,7 @@ function HomeClient() {
     );
 
     return unsubscribe;
-  }, [activeTab]);
+  }, [searchParams.get('type')]);
 
   const handleCloseAnnouncement = (announcement: string) => {
     setShowAnnouncement(false);
@@ -155,22 +155,10 @@ function HomeClient() {
   };
 
   return (
-    <PageLayout>
+    <div>
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex justify-center'>
-          <CapsuleSwitch
-            options={[
-              { label: '首页', value: 'home' },
-              { label: '收藏夹', value: 'favorites' },
-            ]}
-            active={activeTab}
-            onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
-          />
-        </div>
-
         <div className='max-w-[95%] mx-auto'>
-          {activeTab === 'favorites' ? (
+          {searchParams.get('type') === 'favorites' ? (
             // 收藏夹视图
             <section className='mb-8'>
               <div className='mb-4 flex items-center justify-between'>
@@ -392,7 +380,7 @@ function HomeClient() {
           </div>
         </div>
       )}
-    </PageLayout>
+    </div>
   );
 }
 

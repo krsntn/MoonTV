@@ -3,9 +3,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 interface CapsuleSwitchProps {
-  options: { label: string; value: string }[];
+  options: { label: string; value: string; href?: string }[];
   active: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, href?: string) => void;
   className?: string;
 }
 
@@ -85,7 +85,7 @@ const CapsuleSwitch: React.FC<CapsuleSwitchProps> = ({
             ref={(el) => {
               buttonRefs.current[index] = el;
             }}
-            onClick={() => onChange(opt.value)}
+            onClick={() => onChange(opt.value, opt.href)}
             className={`relative z-10 w-16 px-3 py-1 text-xs sm:w-20 sm:py-2 sm:text-sm rounded-full font-medium transition-all duration-200 cursor-pointer ${
               isActive
                 ? 'text-gray-900 dark:text-gray-100'

@@ -11,7 +11,6 @@ import { DoubanItem, DoubanResult } from '@/lib/types';
 
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
 import DoubanSelector from '@/components/DoubanSelector';
-import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
 function DoubanPageClient() {
@@ -289,18 +288,8 @@ function DoubanPageClient() {
     return type === 'movie' ? '电影' : type === 'tv' ? '电视剧' : '综艺';
   };
 
-  const getActivePath = () => {
-    const params = new URLSearchParams();
-    if (type) params.set('type', type);
-    if (tag) params.set('tag', tag);
-
-    const queryString = params.toString();
-    const activePath = `/douban${queryString ? `?${queryString}` : ''}`;
-    return activePath;
-  };
-
   return (
-    <PageLayout activePath={getActivePath()}>
+    <div>
       <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible'>
         {/* 页面标题和选择器 */}
         <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
@@ -329,7 +318,7 @@ function DoubanPageClient() {
         </div>
 
         {/* 内容展示区域 */}
-        <div className='max-w-[95%] mx-auto mt-8 overflow-visible'>
+        <div className='max-w-full mx-auto mt-8 overflow-visible'>
           {/* 内容网格 */}
           <div className='grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
             {loading || (!selectorsReady && !custom)
@@ -383,7 +372,7 @@ function DoubanPageClient() {
           )}
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 

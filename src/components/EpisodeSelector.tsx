@@ -21,6 +21,8 @@ interface VideoInfo {
 }
 
 interface EpisodeSelectorProps {
+  episodes: { title: string; url: string }[];
+  episodeTitle: string;
   /** 总集数 */
   totalEpisodes: number;
   /** 每页显示多少集，默认 50 */
@@ -46,6 +48,8 @@ interface EpisodeSelectorProps {
  * 选集组件，支持分页、自动滚动聚焦当前分页标签，以及换源功能。
  */
 const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
+  episodes,
+  episodeTitle,
   totalEpisodes,
   episodesPerPage = 50,
   value = 1,
@@ -118,7 +122,9 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       return;
     }
     const episodeUrl =
-      source.episodes.length > 1 ? source.episodes[1] : source.episodes[0];
+      source.episodes.length > 1
+        ? source.episodes[1].url
+        : source.episodes[0].url;
 
     // 标记为已尝试
     setAttemptedSources((prev) => new Set(prev).add(sourceKey));
@@ -295,12 +301,6 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
     [onSourceChange]
   );
 
-  const currentStart = currentPage * episodesPerPage + 1;
-  const currentEnd = Math.min(
-    currentStart + episodesPerPage - 1,
-    totalEpisodes
-  );
-
   return (
     <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
@@ -366,55 +366,37 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 })}
               </div>
             </div>
-            {/* 向上/向下按钮 */}
-            <button
-              className='flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-gray-700 hover:text-green-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-green-400 dark:hover:bg-white/20 transition-colors transform translate-y-[-4px]'
-              onClick={() => {
-                // 切换集数排序（正序/倒序）
-                setDescending((prev) => !prev);
-              }}
-            >
-              <svg
-                className='w-4 h-4'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4'
-                />
-              </svg>
-            </button>
           </div>
 
           {/* 集数网格 */}
-          <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 overflow-y-auto h-full pb-4'>
-            {(() => {
-              const len = currentEnd - currentStart + 1;
-              const episodes = Array.from({ length: len }, (_, i) =>
-                descending ? currentEnd - i : currentStart + i
-              );
-              return episodes;
-            })().map((episodeNumber) => {
-              const isActive = episodeNumber === value;
-              return (
-                <button
-                  key={episodeNumber}
-                  onClick={() => handleEpisodeClick(episodeNumber - 1)}
-                  className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 
+          <div className='flex flex-wrap gap-x-3 gap-y-3 overflow-y-auto pb-4'>
+            {episodes
+              .slice(
+                currentPage * episodesPerPage,
+                (currentPage + 1) * episodesPerPage
+              )
+              .map((episode, index) => {
+                const key = index + 1;
+                const isActive = episode.title === episodeTitle;
+                return (
+                  <button
+                    key={key}
+                    onClick={() =>
+                      handleEpisodeClick(
+                        currentPage * episodesPerPage + key - 1
+                      )
+                    }
+                    className={`h-10 min-w-10 px-2 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 
                     ${
                       isActive
                         ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 dark:bg-green-600'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20'
                     }`.trim()}
-                >
-                  {episodeNumber}
-                </button>
-              );
-            })}
+                  >
+                    {episode.title}
+                  </button>
+                );
+              })}
           </div>
         </>
       )}

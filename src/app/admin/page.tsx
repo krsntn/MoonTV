@@ -36,8 +36,6 @@ import Swal from 'sweetalert2';
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
-import PageLayout from '@/components/PageLayout';
-
 // 统一弹窗方法（必须在首次使用前定义）
 const showError = (message: string) =>
   Swal.fire({ icon: 'error', title: '错误', text: message });
@@ -1707,7 +1705,7 @@ function AdminPageClient() {
 
   if (loading) {
     return (
-      <PageLayout activePath='/admin'>
+      <div>
         <div className='px-2 sm:px-10 py-4 sm:py-8'>
           <div className='max-w-[95%] mx-auto'>
             <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8'>
@@ -1723,7 +1721,7 @@ function AdminPageClient() {
             </div>
           </div>
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
@@ -1733,7 +1731,7 @@ function AdminPageClient() {
   }
 
   return (
-    <PageLayout activePath='/admin'>
+    <div>
       <div className='px-2 sm:px-10 py-4 sm:py-8'>
         <div className='max-w-[95%] mx-auto'>
           {/* 标题 + 重置配置按钮 */}
@@ -1812,7 +1810,7 @@ function AdminPageClient() {
           </div>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 

@@ -14,7 +14,6 @@ import {
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
 
-import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
 function SearchPageClient() {
@@ -233,7 +232,7 @@ function SearchPageClient() {
   };
 
   return (
-    <PageLayout activePath='/search'>
+    <div>
       <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible mb-10'>
         {/* 搜索框 */}
         <div className='mb-8'>
@@ -397,7 +396,7 @@ function SearchPageClient() {
       >
         <ChevronUp className='w-6 h-6 transition-transform group-hover:scale-110' />
       </button>
-    </PageLayout>
+    </div>
   );
 }
 

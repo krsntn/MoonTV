@@ -25,7 +25,6 @@ import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
 import EpisodeSelector from '@/components/EpisodeSelector';
-import PageLayout from '@/components/PageLayout';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -224,8 +223,8 @@ function PlayPageClient() {
 
             const episodeUrl =
               source.episodes.length > 1
-                ? source.episodes[1]
-                : source.episodes[0];
+                ? source.episodes[1].url
+                : source.episodes[0].url;
             const testResult = await getVideoResolutionFromM3u8(episodeUrl);
 
             return {
@@ -410,7 +409,7 @@ function PlayPageClient() {
       setVideoUrl('');
       return;
     }
-    const newUrl = detailData?.episodes[episodeIndex] || '';
+    const newUrl = detailData?.episodes[episodeIndex].url || '';
     if (newUrl !== videoUrl) {
       setVideoUrl(newUrl);
     }
@@ -1582,7 +1581,7 @@ function PlayPageClient() {
 
   if (loading) {
     return (
-      <PageLayout activePath='/play'>
+      <div>
         <div className='flex items-center justify-center min-h-screen bg-transparent'>
           <div className='text-center max-w-md mx-auto px-6'>
             {/* 动画影院图标 */}
@@ -1668,13 +1667,13 @@ function PlayPageClient() {
             </div>
           </div>
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <PageLayout activePath='/play'>
+      <div>
         <div className='flex items-center justify-center min-h-screen bg-transparent'>
           <div className='text-center max-w-md mx-auto px-6'>
             {/* 错误图标 */}
@@ -1736,12 +1735,12 @@ function PlayPageClient() {
             </div>
           </div>
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   return (
-    <PageLayout activePath='/play'>
+    <div>
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
         {/* 第一行：影片标题 */}
         <div className='py-1'>
@@ -1749,7 +1748,7 @@ function PlayPageClient() {
             {videoTitle || '影片标题'}
             {totalEpisodes > 1 && (
               <span className='text-gray-500 dark:text-gray-400'>
-                {` > 第 ${currentEpisodeIndex + 1} 集`}
+                {` > ${detail?.episodes[currentEpisodeIndex].title}`}
               </span>
             )}
           </h1>
@@ -1865,6 +1864,8 @@ function PlayPageClient() {
               }`}
             >
               <EpisodeSelector
+                episodes={detail?.episodes || []}
+                episodeTitle={detail?.episodes[currentEpisodeIndex].title || ''}
                 totalEpisodes={totalEpisodes}
                 value={currentEpisodeIndex + 1}
                 onChange={handleEpisodeChange}
@@ -1949,7 +1950,7 @@ function PlayPageClient() {
           </div>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
