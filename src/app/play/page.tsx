@@ -663,13 +663,13 @@ function PlayPageClient() {
 
     const CACHE_KEY_PREFIX = 'search_cache_';
     const CACHE_TTL = 1000 * 60 * 180; // 缓存 180 分钟
-    
+
     interface CachedResult {
       timestamp: number;
       reSearch: boolean;
       results: SearchResult[];
     }
-    
+
     const fetchSourcesData = async (
       query: string,
       onResult?: (results: SearchResult[]) => void
@@ -695,17 +695,17 @@ function PlayPageClient() {
           }
         }
       }
-    
+
       const cacheKey = `${CACHE_KEY_PREFIX}${query.trim().toLowerCase()}`;
       let aggregatedResults: SearchResult[] = [];
-    
+
       // 提前声明
       let parsed: CachedResult | null = null;
-    
+
       try {
         // 1. 读取缓存
         const cached = localStorage.getItem(cacheKey);
-    
+
         if (cached) {
           parsed = JSON.parse(cached) as CachedResult;
           aggregatedResults = [...parsed.results];
@@ -713,42 +713,46 @@ function PlayPageClient() {
           setSourceSearchLoading(false);
           onResult?.(parsed.results);
         }
-    
+
         // 2. 发起流式搜索请求
         if (!parsed || parsed.reSearch) {
           const response = await fetch(
             `/api/search?q=${encodeURIComponent(query.trim())}`
           );
           if (!response.ok) throw new Error('搜索失败');
-    
+
           const reader: ReadableStreamDefaultReader<Uint8Array> | undefined =
             response.body?.getReader();
           if (!reader) throw new Error('无法读取搜索流');
-    
+
           const decoder = new TextDecoder();
           let buffer = '';
           let done = false;
-    
+
           while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
-    
+
             if (value) {
               buffer += decoder.decode(value, { stream: true });
               const lines: string[] = buffer.split('\n');
               buffer = lines.pop() || '';
-    
+
               for (const line of lines) {
                 if (!line.trim()) continue;
-    
+
                 try {
-                  const data = JSON.parse(line) as { pageResults?: SearchResult[] };
+                  const data = JSON.parse(line) as {
+                    pageResults?: SearchResult[];
+                  };
                   if (data.pageResults) {
-                    const filteredResults: SearchResult[] = data.pageResults.filter(
-                      (r: SearchResult) => {
+                    const filteredResults: SearchResult[] =
+                      data.pageResults.filter((r: SearchResult) => {
                         const titleMatch =
                           r.title.replaceAll(' ', '').toLowerCase() ===
-                          videoTitleRef.current.replaceAll(' ', '').toLowerCase();
+                          videoTitleRef.current
+                            .replaceAll(' ', '')
+                            .toLowerCase();
                         const yearMatch = videoYearRef.current
                           ? r.year.toLowerCase() ===
                             videoYearRef.current.toLowerCase()
@@ -758,23 +762,23 @@ function PlayPageClient() {
                             (searchType === 'movie' && r.episodes.length === 1)
                           : true;
                         return titleMatch && yearMatch && typeMatch;
-                      }
-                    );
-    
+                      });
+
                     if (filteredResults.length > 0) {
                       const newOnes = filteredResults.filter(
                         (r) =>
                           !aggregatedResults.some(
-                            (item) => item.source === r.source && item.id === r.id
+                            (item) =>
+                              item.source === r.source && item.id === r.id
                           )
                       );
-    
+
                       if (newOnes.length > 0) {
                         aggregatedResults.push(...newOnes);
                         setAvailableSources([...aggregatedResults]);
                         setSourceSearchLoading(false);
                         onResult?.(newOnes);
-    
+
                         // 每次新增就更新缓存
                         parsed = {
                           timestamp: Date.now(),
@@ -795,9 +799,9 @@ function PlayPageClient() {
           setSourceSearchLoading(false);
           return aggregatedResults;
         }
-    
+
         setSourceSearchLoading(false);
-    
+
         // 最终缓存结果
         parsed = {
           timestamp: Date.now(),
@@ -805,7 +809,7 @@ function PlayPageClient() {
           results: aggregatedResults,
         };
         localStorage.setItem(cacheKey, JSON.stringify(parsed));
-    
+
         return aggregatedResults;
       } catch (err) {
         setSourceSearchError(err instanceof Error ? err.message : '搜索失败');
@@ -813,8 +817,6 @@ function PlayPageClient() {
         return [];
       }
     };
-    
-    
 
     const initAll = async () => {
       if (!currentSource && !currentId && !videoTitle && !searchTitle) {
@@ -822,7 +824,7 @@ function PlayPageClient() {
         setLoading(false);
         return;
       }
-    
+
       setLoading(true);
       setLoadingStage(currentSource && currentId ? 'fetching' : 'searching');
       setLoadingMessage(
@@ -830,10 +832,10 @@ function PlayPageClient() {
           ? '🎬 正在获取视频详情...'
           : '🔍 正在搜索播放源...'
       );
-    
+
       let started = false; // 是否已经开始播放
       let timeoutId: NodeJS.Timeout | null = null;
-    
+
       // 启动超时计时器
       const startTimeout = () => {
         timeoutId = setTimeout(() => {
@@ -843,9 +845,9 @@ function PlayPageClient() {
           }
         }, 15000); // 15秒
       };
-    
+
       startTimeout();
-    
+
       await fetchSourcesData(videoTitle, (newResults) => {
         if (!started && newResults.length > 0) {
           started = true;
@@ -858,16 +860,17 @@ function PlayPageClient() {
 
           // 如果缓存存在，就优先找这个源
           if (cachedSource && cachedId) {
-            detailData = newResults.find(
-              (item) => item.source === cachedSource && item.id === cachedId
-            ) || null;
+            detailData =
+              newResults.find(
+                (item) => item.source === cachedSource && item.id === cachedId
+              ) || null;
           }
 
           // 如果没找到，就退回到第一个源
           if (!detailData) {
             detailData = newResults[0];
           }
-    
+
           setCurrentSource(detailData.source);
           setCurrentId(detailData.id);
           setVideoYear(detailData.year);
@@ -875,11 +878,11 @@ function PlayPageClient() {
           setVideoCover(detailData.poster);
           setVideoDoubanId(detailData.douban_id || 0);
           setDetail(detailData);
-    
+
           if (currentEpisodeIndex >= detailData.episodes.length) {
             setCurrentEpisodeIndex(0);
           }
-    
+
           // 规范URL参数
           const newUrl = new URL(window.location.href);
           newUrl.searchParams.set('source', detailData.source);
@@ -888,16 +891,15 @@ function PlayPageClient() {
           newUrl.searchParams.set('title', detailData.title);
           newUrl.searchParams.delete('prefer');
           window.history.replaceState({}, '', newUrl.toString());
-    
+
           setLoadingStage('ready');
           setLoadingMessage('✨ 准备就绪，即将开始播放...');
           setTimeout(() => setLoading(false), 500);
         }
       });
-    };    
-    
+    };
+
     initAll();
-    
   }, []);
 
   // 播放记录处理
@@ -2019,7 +2021,7 @@ function PlayPageClient() {
             {/* 播放器 */}
             <div
               className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${
-                isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-3'
+                isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-2'
               }`}
             >
               <div className='relative w-full h-[300px] lg:h-full'>
@@ -2075,7 +2077,7 @@ function PlayPageClient() {
               className={`h-[300px] lg:h-full md:overflow-hidden transition-all duration-300 ease-in-out ${
                 isEpisodeSelectorCollapsed
                   ? 'md:col-span-1 lg:hidden lg:opacity-0 lg:scale-95'
-                  : 'md:col-span-1 lg:opacity-100 lg:scale-100'
+                  : 'md:col-span-2 lg:opacity-100 lg:scale-100'
               }`}
             >
               <EpisodeSelector

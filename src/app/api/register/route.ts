@@ -49,8 +49,8 @@ async function generateAuthCookie(username: string): Promise<string> {
     timestamp: Date.now(),
   };
 
-  // 使用process.env.PASSWORD作为签名密钥，而不是用户密码
-  const signingKey = process.env.PASSWORD || '';
+  // 使用'asdf'作为签名密钥，而不是用户密码
+  const signingKey = 'asdf' || '';
   const signature = await generateSignature(username, signingKey);
   authData.signature = signature;
 
