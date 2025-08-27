@@ -155,9 +155,9 @@ function PlayPageClient() {
   // 用于记录是否需要在播放器 ready 后跳转到指定进度
   const resumeTimeRef = useRef<number | null>(null);
   // 上次使用的音量，默认 0.7
-  const lastVolumeRef = useRef<number>(0.7);
+  const lastVolumeRef = useRef<number>(1);
   // 上次使用的播放速率，默认 1.0
-  const lastPlaybackRateRef = useRef<number>(1.0);
+  const lastPlaybackRateRef = useRef<number>(1.3);
 
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
@@ -1189,6 +1189,25 @@ function PlayPageClient() {
         e.preventDefault();
       }
     }
+
+    if (e.key === '.' || e.key === ',') {
+      const curPlaybackRate = artPlayerRef.current.playbackRate;
+      const rates = Artplayer.PLAYBACK_RATE;
+      artPlayerRef.current.playbackRate =
+        rates[
+          e.key === '.'
+            ? Math.min(rates.indexOf(curPlaybackRate) + 1, rates.length - 1)
+            : Math.max(rates.indexOf(curPlaybackRate) - 1, 0)
+        ];
+      e.preventDefault();
+    }
+
+    if (e.key === 'p') {
+      if (artPlayerRef.current) {
+        artPlayerRef.current.playbackRate = 1;
+        e.preventDefault();
+      }
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -1378,8 +1397,7 @@ function PlayPageClient() {
 
     // 检测是否为WebKit浏览器
     const isWebkit =
-      typeof window !== 'undefined' &&
-      typeof (window as any).webkitConvertPointFromNodeToPage === 'function';
+      typeof window !== 'undefined' && /AppleWebKit/.test(navigator.userAgent);
 
     // 非WebKit浏览器且播放器已存在，使用switch方法切换
     if (!isWebkit && artPlayerRef.current) {
@@ -1405,14 +1423,14 @@ function PlayPageClient() {
 
     try {
       // 创建新的播放器实例
-      Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+      Artplayer.PLAYBACK_RATE = [1, 1.3, 1.5, 2];
       Artplayer.USE_RAF = true;
 
       artPlayerRef.current = new Artplayer({
         container: artRef.current,
         url: videoUrl,
         poster: videoCover,
-        volume: 0.7,
+        volume: 1,
         isLive: false,
         muted: false,
         autoplay: true,
@@ -1435,7 +1453,7 @@ function PlayPageClient() {
         airplay: true,
         theme: '#22c55e',
         lang: 'zh-cn',
-        hotkey: false,
+        hotkey: true,
         fastForward: true,
         autoOrientation: true,
         lock: true,
@@ -1630,6 +1648,7 @@ function PlayPageClient() {
         saveCurrentPlayProgress();
       });
 
+      console.log('artPlayerRef.current:', artPlayerRef.current);
       artPlayerRef.current.on('video:ended', () => {
         releaseWakeLock();
       });
@@ -1670,6 +1689,15 @@ function PlayPageClient() {
           ) {
             artPlayerRef.current.volume = lastVolumeRef.current;
           }
+          console.log(
+            'test',
+            artPlayerRef.current.playbackRate,
+            lastPlaybackRateRef.current,
+            Math.abs(
+              artPlayerRef.current.playbackRate - lastPlaybackRateRef.current
+            ) > 0.01,
+            isWebkit
+          );
           if (
             Math.abs(
               artPlayerRef.current.playbackRate - lastPlaybackRateRef.current
