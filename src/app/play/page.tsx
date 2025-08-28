@@ -1109,7 +1109,8 @@ function PlayPageClient() {
     // 忽略输入框中的按键事件
     if (
       (e.target as HTMLElement).tagName === 'INPUT' ||
-      (e.target as HTMLElement).tagName === 'TEXTAREA'
+      (e.target as HTMLElement).tagName === 'TEXTAREA' ||
+      artPlayerRef.current.isFocus
     )
       return;
 
@@ -1134,7 +1135,7 @@ function PlayPageClient() {
     // 左箭头 = 快退
     if (!e.altKey && e.key === 'ArrowLeft') {
       if (artPlayerRef.current && artPlayerRef.current.currentTime > 5) {
-        artPlayerRef.current.currentTime -= 10;
+        artPlayerRef.current.currentTime -= Artplayer.SEEK_STEP;
         e.preventDefault();
       }
     }
@@ -1145,7 +1146,7 @@ function PlayPageClient() {
         artPlayerRef.current &&
         artPlayerRef.current.currentTime < artPlayerRef.current.duration - 5
       ) {
-        artPlayerRef.current.currentTime += 10;
+        artPlayerRef.current.currentTime += Artplayer.SEEK_STEP;
         e.preventDefault();
       }
     }
@@ -1154,7 +1155,7 @@ function PlayPageClient() {
     if (e.key === 'ArrowUp') {
       if (artPlayerRef.current && artPlayerRef.current.volume < 1) {
         artPlayerRef.current.volume =
-          Math.round((artPlayerRef.current.volume + 0.1) * 10) / 10;
+          artPlayerRef.current.volume + Artplayer.VOLUME_STEP;
         artPlayerRef.current.notice.show = `音量: ${Math.round(
           artPlayerRef.current.volume * 100
         )}`;
@@ -1166,7 +1167,7 @@ function PlayPageClient() {
     if (e.key === 'ArrowDown') {
       if (artPlayerRef.current && artPlayerRef.current.volume > 0) {
         artPlayerRef.current.volume =
-          Math.round((artPlayerRef.current.volume - 0.1) * 10) / 10;
+          artPlayerRef.current.volume - Artplayer.VOLUME_STEP;
         artPlayerRef.current.notice.show = `音量: ${Math.round(
           artPlayerRef.current.volume * 100
         )}`;
@@ -1186,6 +1187,19 @@ function PlayPageClient() {
     if (e.key === 'f' || e.key === 'F') {
       if (artPlayerRef.current) {
         artPlayerRef.current.fullscreen = !artPlayerRef.current.fullscreen;
+        e.preventDefault();
+      }
+    }
+
+    if (e.key === 'l' || e.key === 'j') {
+      if (
+        artPlayerRef.current.currentTime <
+        artPlayerRef.current.duration - 5
+      ) {
+        artPlayerRef.current.currentTime =
+          e.key === 'l'
+            ? artPlayerRef.current.currentTime + (Artplayer.SEEK_STEP + 10)
+            : artPlayerRef.current.currentTime - (Artplayer.SEEK_STEP - 10);
         e.preventDefault();
       }
     }
@@ -1423,8 +1437,9 @@ function PlayPageClient() {
 
     try {
       // 创建新的播放器实例
-      Artplayer.PLAYBACK_RATE = [1, 1.3, 1.5, 2];
+      Artplayer.PLAYBACK_RATE = [1, 1.3, 1.5, 1.8, 2];
       Artplayer.USE_RAF = true;
+      Artplayer.SEEK_STEP = 10;
 
       artPlayerRef.current = new Artplayer({
         container: artRef.current,
@@ -1648,7 +1663,6 @@ function PlayPageClient() {
         saveCurrentPlayProgress();
       });
 
-      console.log('artPlayerRef.current:', artPlayerRef.current);
       artPlayerRef.current.on('video:ended', () => {
         releaseWakeLock();
       });
@@ -1680,6 +1694,8 @@ function PlayPageClient() {
           } catch (err) {
             console.warn('恢复播放进度失败:', err);
           }
+        } else {
+          artPlayerRef.current.play();
         }
         resumeTimeRef.current = null;
 
@@ -1689,15 +1705,6 @@ function PlayPageClient() {
           ) {
             artPlayerRef.current.volume = lastVolumeRef.current;
           }
-          console.log(
-            'test',
-            artPlayerRef.current.playbackRate,
-            lastPlaybackRateRef.current,
-            Math.abs(
-              artPlayerRef.current.playbackRate - lastPlaybackRateRef.current
-            ) > 0.01,
-            isWebkit
-          );
           if (
             Math.abs(
               artPlayerRef.current.playbackRate - lastPlaybackRateRef.current
