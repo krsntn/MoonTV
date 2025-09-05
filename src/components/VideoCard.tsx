@@ -3,7 +3,7 @@
 import { Heart, PlayCircleIcon, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect,useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   deleteFavorite,
@@ -122,10 +122,13 @@ export default function VideoCard({
 
       // 延迟订阅收藏更新
       const storageKey = generateStorageKey(actualSource, actualId);
-      subscribeToDataUpdates('favoritesUpdated', (newFavorites: Record<string, any>) => {
-        const isNowFavorited = !!newFavorites[storageKey];
-        setFavorited(isNowFavorited);
-      });
+      subscribeToDataUpdates(
+        'favoritesUpdated',
+        (newFavorites: Record<string, any>) => {
+          const isNowFavorited = !!newFavorites[storageKey];
+          setFavorited(isNowFavorited);
+        }
+      );
     } catch (err) {
       console.error('检查收藏状态失败', err);
     }
@@ -194,13 +197,13 @@ export default function VideoCard({
     // 点击时不再检查收藏状态
 
     if (from === 'douban') {
-      router.push(
+      window.open(
         `/play?title=${encodeURIComponent(actualTitle.trim())}${
           actualYear ? `&year=${actualYear}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`
       );
     } else if (actualSource && actualId) {
-      router.push(
+      window.open(
         `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle
         )}${actualYear ? `&year=${actualYear}` : ''}${
@@ -214,7 +217,6 @@ export default function VideoCard({
     from,
     actualSource,
     actualId,
-    router,
     actualTitle,
     actualYear,
     isAggregate,
@@ -330,52 +332,57 @@ export default function VideoCard({
         {/* 集数 */}
         {actualEpisodes && actualEpisodes > 1 && (
           <div className='absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md transition-all duration-300 ease-out group-hover:scale-110'>
-            {currentEpisode ? `${currentEpisode}/${actualEpisodes}` : actualEpisodes}
+            {currentEpisode
+              ? `${currentEpisode}/${actualEpisodes}`
+              : actualEpisodes}
           </div>
         )}
 
-{/* 播放源徽章 */}
-{isAggregate && items && items.length > 0 && (
-  <div className="absolute bottom-2 right-2 flex flex-col items-end">
-    <div className="relative group/sources">
-      {/* 小圆圈按钮：默认显示 */}
-      <div
-        className="bg-gray-700 text-white text-xs sm:text-xs w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center shadow-md hover:bg-gray-600 hover:scale-[1.1] transition-all duration-300 ease-out cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowSources((prev) => !prev); // 点击切换列表显示
-        }}
-      >
-        {items.length}
-      </div>
+        {/* 播放源徽章 */}
+        {isAggregate && items && items.length > 0 && (
+          <div className='absolute bottom-2 right-2 flex flex-col items-end'>
+            <div className='relative group/sources'>
+              {/* 小圆圈按钮：默认显示 */}
+              <div
+                className='bg-gray-700 text-white text-xs sm:text-xs w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center shadow-md hover:bg-gray-600 hover:scale-[1.1] transition-all duration-300 ease-out cursor-pointer'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSources((prev) => !prev); // 点击切换列表显示
+                }}
+              >
+                {items.length}
+              </div>
 
-{/* 播放源列表弹窗 */}
-{showSources && (
-  <div className="absolute bottom-full mb-2 right-0 sm:right-0 z-50">
-    <div className="bg-gray-800/90 backdrop-blur-sm text-white text-xs sm:text-xs rounded-lg shadow-xl border border-white/10 p-1 sm:p-1.5 min-w-[70px] sm:min-w-[90px] max-w-[120px] sm:max-w-[160px] max-h-20 sm:max-h-40 overflow-auto">
-      <div className="space-y-0.5 sm:space-y-1">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-1 sm:gap-1.5">
-            <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 bg-blue-400 rounded-full flex-shrink-0"></div>
-            <span className="truncate text-[10px] sm:text-xs leading-tight" title={item.source_name}>
-              {item.source_name}
-            </span>
+              {/* 播放源列表弹窗 */}
+              {showSources && (
+                <div className='absolute bottom-full mb-2 right-0 sm:right-0 z-50'>
+                  <div className='bg-gray-800/90 backdrop-blur-sm text-white text-xs sm:text-xs rounded-lg shadow-xl border border-white/10 p-1 sm:p-1.5 min-w-[70px] sm:min-w-[90px] max-w-[120px] sm:max-w-[160px] max-h-20 sm:max-h-40 overflow-auto'>
+                    <div className='space-y-0.5 sm:space-y-1'>
+                      {items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className='flex items-center gap-1 sm:gap-1.5'
+                        >
+                          <div className='w-0.5 h-0.5 sm:w-1 sm:h-1 bg-blue-400 rounded-full flex-shrink-0'></div>
+                          <span
+                            className='truncate text-[10px] sm:text-xs leading-tight'
+                            title={item.source_name}
+                          >
+                            {item.source_name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 小箭头 */}
+                    <div className='absolute top-full right-2 sm:right-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] sm:border-l-[6px] sm:border-r-[6px] sm:border-t-[6px] border-transparent border-t-gray-800/90'></div>
+                  </div>
+                </div>
+              )}
+              {/* 播放源列表弹窗 */}
+            </div>
           </div>
-        ))}
-      </div>
-
-      {/* 小箭头 */}
-      <div className="absolute top-full right-2 sm:right-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] sm:border-l-[6px] sm:border-r-[6px] sm:border-t-[6px] border-transparent border-t-gray-800/90"></div>
-    </div>
-  </div>
-)}
-{/* 播放源列表弹窗 */}
-
-    </div>
-  </div>
-)}
-
-
+        )}
       </div>
 
       {config.showProgress && progress !== undefined && (

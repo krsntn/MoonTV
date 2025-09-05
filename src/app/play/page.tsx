@@ -1110,7 +1110,7 @@ function PlayPageClient() {
     if (
       (e.target as HTMLElement).tagName === 'INPUT' ||
       (e.target as HTMLElement).tagName === 'TEXTAREA' ||
-      artPlayerRef.current.isFocus
+      artPlayerRef.current?.isFocus
     )
       return;
 
