@@ -197,13 +197,13 @@ export default function VideoCard({
     // 点击时不再检查收藏状态
 
     if (from === 'douban') {
-      window.open(
+      router.push(
         `/play?title=${encodeURIComponent(actualTitle.trim())}${
           actualYear ? `&year=${actualYear}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`
       );
     } else if (actualSource && actualId) {
-      window.open(
+      router.push(
         `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle
         )}${actualYear ? `&year=${actualYear}` : ''}${
@@ -217,6 +217,7 @@ export default function VideoCard({
     from,
     actualSource,
     actualId,
+    router,
     actualTitle,
     actualYear,
     isAggregate,
