@@ -275,7 +275,7 @@ function DoubanPageClient() {
         setDoubanData([]);
 
         let data: DoubanResult;
-        const pageStart = (page - 1) * 25;
+        const pageStart = (page - 1) * 20;
 
         if (type === 'custom') {
           const selectedCategory = customCategories.find(
@@ -349,7 +349,14 @@ function DoubanPageClient() {
             category: multiLevelValues.type
               ? (multiLevelValues.type as string)
               : '',
-            format: type === 'show' ? '综艺' : type === 'tv' ? '电视剧' : '',
+            format:
+              type === 'show'
+                ? '综艺'
+                : type === 'tv'
+                ? '电视剧'
+                : type === 'movie'
+                ? '电影'
+                : '',
             region: multiLevelValues.region
               ? (multiLevelValues.region as string)
               : '',
