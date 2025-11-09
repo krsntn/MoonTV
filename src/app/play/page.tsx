@@ -1407,7 +1407,6 @@ function PlayPageClient() {
       setError('视频地址无效');
       return;
     }
-    console.log(videoUrl);
 
     // 检测是否为WebKit浏览器
     const isWebkit =

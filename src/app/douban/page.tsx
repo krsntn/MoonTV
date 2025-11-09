@@ -108,7 +108,13 @@ function DoubanPageClient() {
     const page = Number(searchParams.get('page')) || 1;
     setCurrentPage(page);
     loadDataForPage(page);
-  }, [searchParams.get('page')]);
+  }, [
+    searchParams.get('page'),
+    primarySelection,
+    secondarySelection,
+    multiLevelValues,
+    selectedWeekday,
+  ]);
 
   // 初始化时标记选择器为准备好状态
   useEffect(() => {
@@ -234,7 +240,7 @@ function DoubanPageClient() {
           kind: 'tv' as const,
           category: type,
           type: secondarySelection,
-          pageLimit: 25,
+          pageLimit: 20,
           pageStart,
         };
       }
@@ -244,7 +250,7 @@ function DoubanPageClient() {
         kind: type as 'tv' | 'movie',
         category: primarySelection,
         type: secondarySelection,
-        pageLimit: 25,
+        pageLimit: 20,
         pageStart,
       };
     },
@@ -281,7 +287,7 @@ function DoubanPageClient() {
             data = await getDoubanList({
               tag: selectedCategory.query,
               type: selectedCategory.type,
-              pageLimit: 25,
+              pageLimit: 20,
               pageStart,
             });
           } else {
@@ -315,7 +321,7 @@ function DoubanPageClient() {
         } else if (type === 'anime') {
           data = await getDoubanRecommends({
             kind: primarySelection === '番剧' ? 'tv' : 'movie',
-            pageLimit: 25,
+            pageLimit: 20,
             pageStart,
             category: '动画',
             format: primarySelection === '番剧' ? '电视剧' : '',
@@ -338,7 +344,7 @@ function DoubanPageClient() {
         } else if (primarySelection === '全部') {
           data = await getDoubanRecommends({
             kind: type === 'show' ? 'tv' : (type as 'tv' | 'movie'),
-            pageLimit: 25,
+            pageLimit: 20,
             pageStart,
             category: multiLevelValues.type
               ? (multiLevelValues.type as string)
