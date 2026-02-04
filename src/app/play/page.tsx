@@ -1448,7 +1448,7 @@ function PlayPageClient() {
         isLive: false,
         muted: false,
         autoplay: true,
-        pip: true,
+        pip: false,
         autoSize: false,
         autoMini: false,
         screenshot: false,
@@ -1532,102 +1532,102 @@ function PlayPageClient() {
           loading:
             '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDUwIDUwIj48cGF0aCBkPSJNMjUuMjUxIDYuNDYxYy0xMC4zMTggMC0xOC42ODMgOC4zNjUtMTguNjgzIDE4LjY4M2g0LjA2OGMwLTguMDcgNi41NDUtMTQuNjE1IDE0LjYxNS0xNC42MTVWNi40NjF6IiBmaWxsPSIjMDA5Njg4Ij48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIGF0dHJpYnV0ZVR5cGU9IlhNTCIgZHVyPSIxcyIgZnJvbT0iMCAyNSAyNSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIHRvPSIzNjAgMjUgMjUiIHR5cGU9InJvdGF0ZSIvPjwvcGF0aD48L3N2Zz4=">',
         },
-        settings: [
-          {
-            html: '去广告',
-            icon: '<text x="50%" y="50%" font-size="20" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">AD</text>',
-            tooltip: blockAdEnabled ? '已开启' : '已关闭',
-            onClick() {
-              const newVal = !blockAdEnabled;
-              try {
-                localStorage.setItem('enable_blockad', String(newVal));
-                if (artPlayerRef.current) {
-                  resumeTimeRef.current = artPlayerRef.current.currentTime;
-                  if (
-                    artPlayerRef.current.video &&
-                    artPlayerRef.current.video.hls
-                  ) {
-                    artPlayerRef.current.video.hls.destroy();
-                  }
-                  artPlayerRef.current.destroy();
-                  artPlayerRef.current = null;
-                }
-                setBlockAdEnabled(newVal);
-              } catch (_) {
-                // ignore
-              }
-              return newVal ? '当前开启' : '当前关闭';
-            },
-          },
-          {
-            name: '跳过片头片尾',
-            html: '跳过片头片尾',
-            switch: skipConfigRef.current.enable,
-            onSwitch: function (item) {
-              const newConfig = {
-                ...skipConfigRef.current,
-                enable: !item.switch,
-              };
-              handleSkipConfigChange(newConfig);
-              return !item.switch;
-            },
-          },
-          {
-            html: '删除跳过配置',
-            onClick: function () {
-              handleSkipConfigChange({
-                enable: false,
-                intro_time: 0,
-                outro_time: 0,
-              });
-              return '';
-            },
-          },
-          {
-            name: '设置片头',
-            html: '设置片头',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="12" r="2" fill="#ffffff"/><path d="M9 12L17 12" stroke="#ffffff" stroke-width="2"/><path d="M17 6L17 18" stroke="#ffffff" stroke-width="2"/></svg>',
-            tooltip:
-              skipConfigRef.current.intro_time === 0
-                ? '设置片头时间'
-                : `${formatTime(skipConfigRef.current.intro_time)}`,
-            onClick: function () {
-              const currentTime = artPlayerRef.current?.currentTime || 0;
-              if (currentTime > 0) {
-                const newConfig = {
-                  ...skipConfigRef.current,
-                  intro_time: currentTime,
-                };
-                handleSkipConfigChange(newConfig);
-                return `${formatTime(currentTime)}`;
-              }
-            },
-          },
-          {
-            name: '设置片尾',
-            html: '设置片尾',
-            icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 6L7 18" stroke="#ffffff" stroke-width="2"/><path d="M7 12L15 12" stroke="#ffffff" stroke-width="2"/><circle cx="19" cy="12" r="2" fill="#ffffff"/></svg>',
-            tooltip:
-              skipConfigRef.current.outro_time >= 0
-                ? '设置片尾时间'
-                : `-${formatTime(-skipConfigRef.current.outro_time)}`,
-            onClick: function () {
-              const outroTime =
-                -(
-                  artPlayerRef.current?.duration -
-                  artPlayerRef.current?.currentTime
-                ) || 0;
-              if (outroTime < 0) {
-                const newConfig = {
-                  ...skipConfigRef.current,
-                  outro_time: outroTime,
-                };
-                handleSkipConfigChange(newConfig);
-                return `-${formatTime(-outroTime)}`;
-              }
-            },
-          },
-        ],
+        // settings: [
+        //   {
+        //     html: '去广告',
+        //     icon: '<text x="50%" y="50%" font-size="20" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">AD</text>',
+        //     tooltip: blockAdEnabled ? '已开启' : '已关闭',
+        //     onClick() {
+        //       const newVal = !blockAdEnabled;
+        //       try {
+        //         localStorage.setItem('enable_blockad', String(newVal));
+        //         if (artPlayerRef.current) {
+        //           resumeTimeRef.current = artPlayerRef.current.currentTime;
+        //           if (
+        //             artPlayerRef.current.video &&
+        //             artPlayerRef.current.video.hls
+        //           ) {
+        //             artPlayerRef.current.video.hls.destroy();
+        //           }
+        //           artPlayerRef.current.destroy();
+        //           artPlayerRef.current = null;
+        //         }
+        //         setBlockAdEnabled(newVal);
+        //       } catch (_) {
+        //         // ignore
+        //       }
+        //       return newVal ? '当前开启' : '当前关闭';
+        //     },
+        //   },
+        //   {
+        //     name: '跳过片头片尾',
+        //     html: '跳过片头片尾',
+        //     switch: skipConfigRef.current.enable,
+        //     onSwitch: function (item) {
+        //       const newConfig = {
+        //         ...skipConfigRef.current,
+        //         enable: !item.switch,
+        //       };
+        //       handleSkipConfigChange(newConfig);
+        //       return !item.switch;
+        //     },
+        //   },
+        //   {
+        //     html: '删除跳过配置',
+        //     onClick: function () {
+        //       handleSkipConfigChange({
+        //         enable: false,
+        //         intro_time: 0,
+        //         outro_time: 0,
+        //       });
+        //       return '';
+        //     },
+        //   },
+        //   {
+        //     name: '设置片头',
+        //     html: '设置片头',
+        //     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="12" r="2" fill="#ffffff"/><path d="M9 12L17 12" stroke="#ffffff" stroke-width="2"/><path d="M17 6L17 18" stroke="#ffffff" stroke-width="2"/></svg>',
+        //     tooltip:
+        //       skipConfigRef.current.intro_time === 0
+        //         ? '设置片头时间'
+        //         : `${formatTime(skipConfigRef.current.intro_time)}`,
+        //     onClick: function () {
+        //       const currentTime = artPlayerRef.current?.currentTime || 0;
+        //       if (currentTime > 0) {
+        //         const newConfig = {
+        //           ...skipConfigRef.current,
+        //           intro_time: currentTime,
+        //         };
+        //         handleSkipConfigChange(newConfig);
+        //         return `${formatTime(currentTime)}`;
+        //       }
+        //     },
+        //   },
+        //   {
+        //     name: '设置片尾',
+        //     html: '设置片尾',
+        //     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 6L7 18" stroke="#ffffff" stroke-width="2"/><path d="M7 12L15 12" stroke="#ffffff" stroke-width="2"/><circle cx="19" cy="12" r="2" fill="#ffffff"/></svg>',
+        //     tooltip:
+        //       skipConfigRef.current.outro_time >= 0
+        //         ? '设置片尾时间'
+        //         : `-${formatTime(-skipConfigRef.current.outro_time)}`,
+        //     onClick: function () {
+        //       const outroTime =
+        //         -(
+        //           artPlayerRef.current?.duration -
+        //           artPlayerRef.current?.currentTime
+        //         ) || 0;
+        //       if (outroTime < 0) {
+        //         const newConfig = {
+        //           ...skipConfigRef.current,
+        //           outro_time: outroTime,
+        //         };
+        //         handleSkipConfigChange(newConfig);
+        //         return `-${formatTime(-outroTime)}`;
+        //       }
+        //     },
+        //   },
+        // ],
         // 控制栏配置
         controls: [
           {
