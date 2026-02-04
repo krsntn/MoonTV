@@ -57,7 +57,7 @@ export function processImageUrl(originalUrl: string): string {
       return `${proxyUrl}${encodeURIComponent(originalUrl)}`;
     case 'direct':
     default:
-      return originalUrl;
+      return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
   }
 }
 
