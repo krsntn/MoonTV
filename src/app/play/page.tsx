@@ -111,14 +111,6 @@ function PlayPageClient() {
   const [searchTitle] = useState(searchParams.get('stitle') || '');
   const [searchType] = useState(searchParams.get('stype') || '');
 
-  // 是否需要优选
-  const [needPrefer, setNeedPrefer] = useState(
-    searchParams.get('prefer') === 'true'
-  );
-  const needPreferRef = useRef(needPrefer);
-  useEffect(() => {
-    needPreferRef.current = needPrefer;
-  }, [needPrefer]);
   // 集数相关
   const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0);
 
@@ -843,12 +835,52 @@ function PlayPageClient() {
             setError('未找到匹配结果');
             setLoading(false);
           }
-        }, 15000); // 15秒
+        }, 10000); // 10秒
       };
 
       startTimeout();
 
-      await fetchSourcesData(videoTitle, (newResults) => {
+      // 如果已有 source 和 id，先直接获取该源详情并开始播放
+      if (currentSource && currentId) {
+        try {
+          const results = await fetchSourceDetail(currentSource, currentId);
+          if (results && results.length > 0) {
+            const detailData = results[0];
+            started = true;
+            if (timeoutId) clearTimeout(timeoutId);
+
+            setCurrentSource(detailData.source);
+            setCurrentId(detailData.id);
+            setVideoYear(detailData.year);
+            setVideoTitle(detailData.title || videoTitleRef.current);
+            setVideoCover(detailData.poster);
+            setVideoDoubanId(detailData.douban_id || 0);
+            setDetail(detailData);
+
+            if (currentEpisodeIndex >= detailData.episodes.length) {
+              setCurrentEpisodeIndex(0);
+            }
+
+            // 规范URL参数
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('source', detailData.source);
+            newUrl.searchParams.set('id', detailData.id);
+            newUrl.searchParams.set('year', detailData.year);
+            newUrl.searchParams.set('title', detailData.title);
+            newUrl.searchParams.delete('prefer');
+            window.history.replaceState({}, '', newUrl.toString());
+
+            setLoadingStage('ready');
+            setLoadingMessage('✨ 准备就绪，即将开始播放...');
+            setTimeout(() => setLoading(false), 500);
+          }
+        } catch (err) {
+          console.error('快速获取视频详情失败，将回退到搜索流程:', err);
+        }
+      }
+
+      // 无论是否已开始播放，都发起搜索以填充“换源”列表
+      fetchSourcesData(videoTitle, (newResults) => {
         if (!started && newResults.length > 0) {
           started = true;
           if (timeoutId) clearTimeout(timeoutId); // 有结果就清理超时
