@@ -85,7 +85,11 @@ export async function GET(request: Request) {
       } catch (err: any) {
         return {
           siteResults: [],
-          failed: { name: site.name, key: site.key, error: err.message || '未知的错误' },
+          failed: {
+            name: site.name,
+            key: site.key,
+            error: err.message || '未知的错误',
+          },
         };
       }
     });
@@ -95,22 +99,28 @@ export async function GET(request: Request) {
     const failedSources = results.filter((r) => r.failed).map((r) => r.failed);
 
     if (aggregatedResults.length === 0) {
-      return new Response(JSON.stringify({ aggregatedResults, failedSources }), {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      });
+      return new Response(
+        JSON.stringify({ aggregatedResults, failedSources }),
+        {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
+      );
     } else {
       const cacheTime = await getCacheTime();
-      return new Response(JSON.stringify({ aggregatedResults, failedSources }), {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': `private, max-age=${cacheTime}`,
-        },
-      });
+      return new Response(
+        JSON.stringify({ aggregatedResults, failedSources }),
+        {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': `private, max-age=${cacheTime}`,
+          },
+        }
+      );
     }
   }
 
@@ -122,11 +132,14 @@ export async function GET(request: Request) {
     const failedSources: { name: string; key: string; error: string }[] = [];
 
     const tasks = apiSites.map(async (site) => {
+      const startTime = Date.now();
       try {
         const generator = searchFromApiStream(site, query);
         let hasResults = false;
+        let pageCount = 0;
 
         for await (const pageResults of generator) {
+          pageCount++;
           let filteredResults = pageResults;
           if (filteredResults.length !== 0) {
             hasResults = true;
@@ -139,30 +152,50 @@ export async function GET(request: Request) {
           }
 
           if (hasResults && filteredResults.length === 0) {
-            failedSources.push({ name: site.name, key: site.key, error: '结果被过滤' });
+            console.log(`[Search] ${site.name} page ${pageCount} results filtered. Total time: ${Date.now() - startTime}ms`);
+            failedSources.push({
+              name: site.name,
+              key: site.key,
+              error: '结果被过滤',
+            });
             await safeWrite({ failedSources });
             return;
           }
 
+          console.log(`[Search] ${site.name} page ${pageCount} yielded ${filteredResults.length} items. Time: ${Date.now() - startTime}ms`);
           aggregatedResults.push(...filteredResults);
-          if (!(await safeWrite({ site: site.key, pageResults: filteredResults }))) {
+          if (
+            !(await safeWrite({ site: site.key, pageResults: filteredResults }))
+          ) {
             return;
           }
         }
 
         if (!hasResults) {
-          failedSources.push({ name: site.name, key: site.key, error: '无搜索结果' });
+          console.log(`[Search] ${site.name} no results. Total time: ${Date.now() - startTime}ms`);
+          failedSources.push({
+            name: site.name,
+            key: site.key,
+            error: '无搜索结果',
+          });
           await safeWrite({ failedSources });
+        } else {
+          console.log(`[Search] ${site.name} finished. Total time: ${Date.now() - startTime}ms`);
         }
       } catch (err: any) {
-        console.warn(`搜索失败 ${site.name}:`, err.message);
-        failedSources.push({ name: site.name, key: site.key, error: err.message || '未知的错误' });
+        console.warn(`[Search] ${site.name} failed:`, err.message);
+        failedSources.push({
+          name: site.name,
+          key: site.key,
+          error: err.message || '未知的错误',
+        });
         await safeWrite({ failedSources });
       }
     });
 
     // 等所有 site 跑完
     await Promise.allSettled(tasks);
+    console.log(`[Search] All sites finished. Sending final aggregation.`);
 
     if (failedSources.length > 0) {
       await safeWrite({ failedSources });
@@ -176,11 +209,11 @@ export async function GET(request: Request) {
     }
   })();
 
-  const cacheTime = await getCacheTime();
   return new Response(readable, {
     headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': `private, max-age=${cacheTime}`,
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

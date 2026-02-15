@@ -130,7 +130,9 @@ export async function* searchFromApiStream(
               .replace('{page}', page.toString());
 
           const promise = (async () => {
-            const pageRes = await fetchWithTimeout(pageUrl, { headers: API_CONFIG.search.headers });
+            const pageRes = await fetchWithTimeout(pageUrl, {
+              headers: API_CONFIG.search.headers,
+            });
             if (!pageRes.ok) return null;
 
             const pageData = await pageRes.json();
@@ -145,11 +147,12 @@ export async function* searchFromApiStream(
           pagePromises.push(promise);
         }
 
-        const settled = await Promise.all(pagePromises);
-        for (const res of settled
-          .filter((r): r is { page: number; results: SearchResult[] } => !!r && r.results.length > 0)
-          .sort((a, b) => a.page - b.page)) {
-          yield res.results;
+        // 依次等待并 yield，这样前面的页好了就能先出去，而不用等所有页都好
+        for (const promise of pagePromises) {
+          const res = await promise;
+          if (res && res.results.length > 0) {
+            yield res.results;
+          }
         }
       } else {
         // ------------------ 顺序模式 ------------------
