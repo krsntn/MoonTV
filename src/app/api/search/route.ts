@@ -85,7 +85,11 @@ export async function GET(request: Request) {
       } catch (err: any) {
         return {
           siteResults: [],
-          failed: { name: site.name, key: site.key, error: err.message || '未知的错误' },
+          failed: {
+            name: site.name,
+            key: site.key,
+            error: err.message || '未知的错误',
+          },
         };
       }
     });
@@ -95,22 +99,28 @@ export async function GET(request: Request) {
     const failedSources = results.filter((r) => r.failed).map((r) => r.failed);
 
     if (aggregatedResults.length === 0) {
-      return new Response(JSON.stringify({ aggregatedResults, failedSources }), {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      });
+      return new Response(
+        JSON.stringify({ aggregatedResults, failedSources }),
+        {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
+      );
     } else {
       const cacheTime = await getCacheTime();
-      return new Response(JSON.stringify({ aggregatedResults, failedSources }), {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': `private, max-age=${cacheTime}`,
-        },
-      });
+      return new Response(
+        JSON.stringify({ aggregatedResults, failedSources }),
+        {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': `private, max-age=${cacheTime}`,
+          },
+        }
+      );
     }
   }
 
@@ -118,7 +128,6 @@ export async function GET(request: Request) {
   // 流式：并发
   // -------------------------
   (async () => {
-    const aggregatedResults: any[] = [];
     const failedSources: { name: string; key: string; error: string }[] = [];
 
     const tasks = apiSites.map(async (site) => {
@@ -139,25 +148,38 @@ export async function GET(request: Request) {
           }
 
           if (hasResults && filteredResults.length === 0) {
-            failedSources.push({ name: site.name, key: site.key, error: '结果被过滤' });
-            await safeWrite({ failedSources });
+            failedSources.push({
+              name: site.name,
+              key: site.key,
+              error: '结果被过滤',
+            });
+            // await safeWrite({ failedSources });
             return;
           }
 
-          aggregatedResults.push(...filteredResults);
-          if (!(await safeWrite({ site: site.key, pageResults: filteredResults }))) {
+          if (
+            !(await safeWrite({ site: site.key, pageResults: filteredResults }))
+          ) {
             return;
           }
         }
 
         if (!hasResults) {
-          failedSources.push({ name: site.name, key: site.key, error: '无搜索结果' });
-          await safeWrite({ failedSources });
+          failedSources.push({
+            name: site.name,
+            key: site.key,
+            error: '无搜索结果',
+          });
+          // await safeWrite({ failedSources });
         }
       } catch (err: any) {
         console.warn(`搜索失败 ${site.name}:`, err.message);
-        failedSources.push({ name: site.name, key: site.key, error: err.message || '未知的错误' });
-        await safeWrite({ failedSources });
+        failedSources.push({
+          name: site.name,
+          key: site.key,
+          error: err.message || '未知的错误',
+        });
+        // await safeWrite({ failedSources });
       }
     });
 
@@ -167,7 +189,6 @@ export async function GET(request: Request) {
     if (failedSources.length > 0) {
       await safeWrite({ failedSources });
     }
-    await safeWrite({ aggregatedResults });
 
     try {
       await writer.close();
@@ -176,11 +197,11 @@ export async function GET(request: Request) {
     }
   })();
 
-  const cacheTime = await getCacheTime();
   return new Response(readable, {
     headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': `private, max-age=${cacheTime}`,
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }
