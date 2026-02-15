@@ -163,12 +163,18 @@ function SearchPageClient() {
         setIsLoading(false);
       } else {
         // 流式：逐行解析
-        if (!response.body) return;
+        if (!response.body) {
+          setIsLoading(false);
+          return;
+        }
+        
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let done = false;
         let buffer = '';
-        let firstResult = true;
+
+        // 一旦流开始，就允许显示结果区域
+        setIsLoading(false);
 
         while (!done) {
           const { value, done: readerDone } = await reader.read();
@@ -186,10 +192,6 @@ function SearchPageClient() {
                 const json = JSON.parse(line);
                 if (json.pageResults && json.pageResults.length > 0) {
                   setSearchResults((prev) => [...prev, ...json.pageResults]);
-                  if (firstResult) {
-                    setIsLoading(false);
-                    firstResult = false;
-                  }
                 }
                 if (json.failedSources) {
                   setFailedSources(json.failedSources);
