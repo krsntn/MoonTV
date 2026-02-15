@@ -737,6 +737,7 @@ function PlayPageClient() {
                   const data = JSON.parse(line) as {
                     pageResults?: SearchResult[];
                   };
+                  console.log('data:', data);
                   if (data.pageResults) {
                     const filteredResults: SearchResult[] =
                       data.pageResults.filter((r: SearchResult) => {
