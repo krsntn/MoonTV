@@ -835,7 +835,7 @@ function PlayPageClient() {
             setError('未找到匹配结果');
             setLoading(false);
           }
-        }, 25000); // 25秒
+        }, 80000); // 80秒
       };
 
       startTimeout();
