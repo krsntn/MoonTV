@@ -21,7 +21,9 @@ interface DoubanCategoryApiResponse {
   }>;
 }
 
-// Node 运行时：内存缓存在同一进程内共享
+// Edge 运行时：在 Vercel 上，Node 函数从项目区域 sin1 访问豆瓣会超时，
+// Edge 函数在 iad1 运行，可以正常访问
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 // 所有 fetch 都不进入 Next.js 的 Data Cache（包括存储层的请求）
 export const fetchCache = 'force-no-store';
