@@ -4,7 +4,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   buildListingSearch,
@@ -33,9 +33,32 @@ export default function ShelfRow({ shelf }: { shelf: Shelf }) {
     peekResultPage(query) ? 'ready' : 'loading'
   );
   const [retryCount, setRetryCount] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  // 接近视口时才加载：频道页一次只请求前几个 Shelf，减少对豆瓣的突发请求
+  useEffect(() => {
+    const element = sectionRef.current;
+    if (!element || typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px 0px' }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // Shelf 与 Listing 第一页共用同一个缓存条目
   useEffect(() => {
+    if (!visible) return;
     const cached = peekResultPage(query);
     if (cached) {
       setResultPage(cached);
@@ -59,12 +82,12 @@ export default function ShelfRow({ shelf }: { shelf: Shelf }) {
     return () => {
       cancelled = true;
     };
-  }, [key, retryCount]);
+  }, [key, retryCount, visible]);
 
   const items = resultPage?.items || [];
 
   return (
-    <section className='mb-8'>
+    <section ref={sectionRef} className='mb-8'>
       <div className='mb-4 flex items-center justify-between'>
         <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
           {title}

@@ -55,10 +55,10 @@ async function generateAuthCookie(
     authData.password = password;
   }
 
-  if (username && 'asdf') {
+  if (username && process.env.PASSWORD) {
     authData.username = username;
     // 使用密码作为密钥对用户名进行签名
-    const signature = await generateSignature(username, 'asdf');
+    const signature = await generateSignature(username, process.env.PASSWORD);
     authData.signature = signature;
     authData.timestamp = Date.now(); // 添加时间戳防重放攻击
   }
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   try {
     // 本地 / localStorage 模式——仅校验固定密码
     if (STORAGE_TYPE === 'localstorage') {
-      const envPassword = 'asdf';
+      const envPassword = process.env.PASSWORD;
 
       // 未配置 PASSWORD 时直接放行
       if (!envPassword) {
@@ -133,7 +133,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 可能是站长，直接读环境变量
-    if (username === process.env.USERNAME && password === 'asdf') {
+    if (
+      username === process.env.USERNAME &&
+      password === process.env.PASSWORD
+    ) {
       // 验证成功，设置认证cookie
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(

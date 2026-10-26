@@ -6,7 +6,8 @@
 export async function fetchDoubanData<T>(url: string): Promise<T> {
   // 添加超时控制
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+  // 正常响应在 4 秒内；豆瓣限流时不返回任何响应，7 秒后放弃，让浏览器尽快改走 CDN 镜像
+  const timeoutId = setTimeout(() => controller.abort(), 7000);
 
   // 设置请求选项，包括信号和头部
   const fetchOptions: RequestInit = {
