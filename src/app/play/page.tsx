@@ -84,6 +84,8 @@ function PlayPageClient() {
   const lastSkipCheckRef = useRef(0);
 
   // 去广告开关（从 localStorage 继承，默认 true）
+  // 设置菜单暂时关闭（见下方注释掉的 settings），保留 setter 以便恢复
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [blockAdEnabled, setBlockAdEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const v = localStorage.getItem('enable_blockad');
@@ -405,15 +407,22 @@ function PlayPageClient() {
     }
   };
 
+  // AirPlay 备选源：Safari 17+ / iOS 17.1+ 上 hls.js 使用 ManagedMediaSource，
+  // 本地播放用 hls.js 添加的 blob <source>，AirPlay 用这里追加的 m3u8 <source>。
+  // 不能删除 hls.js 的 <source>，否则 ManagedMediaSource 无法打开
   const ensureVideoSource = (video: HTMLVideoElement | null, url: string) => {
     if (!video || !url) return;
-    const sources = Array.from(video.getElementsByTagName('source'));
-    const existed = sources.some((s) => s.src === url);
+    const airplaySources = Array.from(
+      video.querySelectorAll<HTMLSourceElement>('source[data-airplay]')
+    );
+    const existed = airplaySources.some((s) => s.getAttribute('src') === url);
     if (!existed) {
-      // 移除旧的 source，保持唯一
-      sources.forEach((s) => s.remove());
+      // 只移除旧的 AirPlay 备选源，保持唯一
+      airplaySources.forEach((s) => s.remove());
       const sourceEl = document.createElement('source');
+      sourceEl.type = 'application/x-mpegURL';
       sourceEl.src = url;
+      sourceEl.dataset.airplay = 'true';
       video.appendChild(sourceEl);
     }
 
@@ -492,7 +501,8 @@ function PlayPageClient() {
     return filteredLines.join('\n');
   }
 
-  // 跳过片头片尾配置相关函数
+  // 跳过片头片尾配置相关函数（设置菜单暂时关闭，保留以便恢复）
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleSkipConfigChange = async (newConfig: {
     enable: boolean;
     intro_time: number;
@@ -1517,6 +1527,18 @@ function PlayPageClient() {
             if (video.hls) {
               video.hls.destroy();
             }
+
+            // 不支持 MSE 的设备（如 iOS 17.1 以下）使用原生 HLS，AirPlay 同样可用
+            if (
+              !Hls.isSupported() &&
+              video.canPlayType('application/vnd.apple.mpegurl')
+            ) {
+              video.hls = undefined;
+              video.disableRemotePlayback = false;
+              video.src = url;
+              return;
+            }
+
             const hls = new Hls({
               debug: false, // 关闭日志
               enableWorker: true, // WebWorker 解码，降低主线程压力
