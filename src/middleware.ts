@@ -14,13 +14,18 @@ export async function middleware(request: NextRequest) {
 
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
 
+  if (!process.env.PASSWORD) {
+    // localstorage 模式下未设置密码：不需要登录，网站对所有人开放
+    if (storageType === 'localstorage') {
+      return NextResponse.next();
+    }
+    // 其他模式需要站长账号：未设置密码时重定向到警告页面
+    const warningUrl = new URL('/warning', request.url);
+    return NextResponse.redirect(warningUrl);
+  }
+
   // 从cookie获取认证信息
-  const authInfo = {
-    role: 'user',
-    password: 'asdf',
-    username: undefined,
-    signature: undefined,
-  };
+  const authInfo = getAuthInfoFromCookie(request);
 
   if (!authInfo) {
     return handleAuthFailure(request, pathname);
@@ -28,7 +33,7 @@ export async function middleware(request: NextRequest) {
 
   // localstorage模式：在middleware中完成验证
   if (storageType === 'localstorage') {
-    if (!authInfo.password || authInfo.password !== 'asdf') {
+    if (!authInfo.password || authInfo.password !== process.env.PASSWORD) {
       return handleAuthFailure(request, pathname);
     }
     return NextResponse.next();
@@ -45,7 +50,7 @@ export async function middleware(request: NextRequest) {
     const isValidSignature = await verifySignature(
       authInfo.username,
       authInfo.signature,
-      'asdf' || ''
+      process.env.PASSWORD || ''
     );
 
     // 签名验证通过即可
