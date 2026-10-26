@@ -65,9 +65,7 @@ async function fetchWithTimeout(
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
 
   // 检查是否使用代理
-  const finalUrl = proxyUrl
-    ? `${proxyUrl}${encodeURIComponent(url)}`
-    : url;
+  const finalUrl = proxyUrl ? `${proxyUrl}${encodeURIComponent(url)}` : url;
 
   const fetchOptions: RequestInit = {
     signal: controller.signal,
@@ -89,7 +87,7 @@ async function fetchWithTimeout(
   }
 }
 
-function getDoubanProxyConfig(): {
+export function getDoubanProxyConfig(): {
   proxyType:
     | 'direct'
     | 'cors-proxy-zwei'
@@ -366,7 +364,7 @@ export async function getDoubanRecommends(
   }
 }
 
-async function fetchDoubanRecommends(
+export async function fetchDoubanRecommends(
   params: DoubanRecommendsParams,
   proxyUrl: string,
   useTencentCDN = false,

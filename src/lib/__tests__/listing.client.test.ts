@@ -1,5 +1,9 @@
 import { GetBangumiCalendarData } from '@/lib/bangumi.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import {
+  fetchDoubanCategories,
+  getDoubanCategories,
+  getDoubanProxyConfig,
+} from '@/lib/douban.client';
 import { parseListingQuery } from '@/lib/listing';
 import {
   clearResultPageCache,
@@ -9,8 +13,12 @@ import {
 } from '@/lib/listing.client';
 
 jest.mock('@/lib/douban.client', () => ({
+  fetchDoubanCategories: jest.fn(),
+  fetchDoubanList: jest.fn(),
+  fetchDoubanRecommends: jest.fn(),
   getDoubanCategories: jest.fn(),
   getDoubanList: jest.fn(),
+  getDoubanProxyConfig: jest.fn(),
   getDoubanRecommends: jest.fn(),
 }));
 jest.mock('@/lib/bangumi.client', () => ({
@@ -19,6 +27,12 @@ jest.mock('@/lib/bangumi.client', () => ({
 
 const mockCategories = getDoubanCategories as jest.MockedFunction<
   typeof getDoubanCategories
+>;
+const mockMirror = fetchDoubanCategories as jest.MockedFunction<
+  typeof fetchDoubanCategories
+>;
+const mockProxyConfig = getDoubanProxyConfig as jest.MockedFunction<
+  typeof getDoubanProxyConfig
 >;
 
 const item = { id: '1', title: 'A', poster: '', rate: '8.0', year: '2024' };
@@ -45,6 +59,8 @@ async function flushRetries() {
 beforeEach(() => {
   jest.useFakeTimers();
   mockCategories.mockReset();
+  mockMirror.mockReset();
+  mockProxyConfig.mockReturnValue({ proxyType: 'direct', proxyUrl: '' });
   clearResultPageCache();
 });
 
@@ -80,7 +96,60 @@ describe('loadResultPage', () => {
     expect(peekResultPage(query('type=movie&page=2'))).toBeDefined();
   });
 
-  it('retries twice and then succeeds', async () => {
+  it('falls back to the Douban CDN mirror when the server fails', async () => {
+    mockCategories.mockResolvedValue(failure);
+    mockMirror.mockResolvedValue(success);
+
+    const promise = loadResultPage(query('type=movie&page=2'), []);
+    await flushRetries();
+
+    await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
+    expect(mockCategories).toHaveBeenCalledTimes(1);
+    expect(mockMirror).toHaveBeenCalledWith(
+      {
+        kind: 'movie',
+        category: '热门',
+        type: '全部',
+        pageLimit: 30,
+        pageStart: 30,
+      },
+      '',
+      true,
+      false
+    );
+  });
+
+  it('tries the server again when the mirror also fails', async () => {
+    mockCategories.mockResolvedValueOnce(failure).mockResolvedValue(success);
+    mockMirror.mockRejectedValue(new Error('network'));
+
+    const promise = loadResultPage(query('type=movie&page=2'), []);
+    await flushRetries();
+
+    await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
+    expect(mockCategories).toHaveBeenCalledTimes(2);
+    expect(mockMirror).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails after all attempts and does not cache the failure', async () => {
+    mockCategories.mockResolvedValue(failure);
+    mockMirror.mockRejectedValue(new Error('network'));
+
+    const promise = loadResultPage(query('type=movie&page=2'), []);
+    const assertion = expect(promise).rejects.toThrow('rate limited');
+    await flushRetries();
+    await assertion;
+    expect(mockCategories).toHaveBeenCalledTimes(2);
+    expect(mockMirror).toHaveBeenCalledTimes(1);
+
+    mockCategories.mockResolvedValue(success);
+    await expect(
+      loadResultPage(query('type=movie&page=2'), [])
+    ).resolves.toEqual({ items: [item], totalPages: 3 });
+  });
+
+  it('only retries the configured source when a proxy is set', async () => {
+    mockProxyConfig.mockReturnValue({ proxyType: 'custom', proxyUrl: 'x' });
     mockCategories
       .mockResolvedValueOnce(failure)
       .mockRejectedValueOnce(new Error('network'))
@@ -91,21 +160,7 @@ describe('loadResultPage', () => {
 
     await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
     expect(mockCategories).toHaveBeenCalledTimes(3);
-  });
-
-  it('fails after the retries and does not cache the failure', async () => {
-    mockCategories.mockResolvedValue(failure);
-
-    const promise = loadResultPage(query('type=movie&page=2'), []);
-    const assertion = expect(promise).rejects.toThrow('rate limited');
-    await flushRetries();
-    await assertion;
-    expect(mockCategories).toHaveBeenCalledTimes(3);
-
-    mockCategories.mockResolvedValue(success);
-    await expect(
-      loadResultPage(query('type=movie&page=2'), [])
-    ).resolves.toEqual({ items: [item], totalPages: 3 });
+    expect(mockMirror).not.toHaveBeenCalled();
   });
 
   it('keeps Bangumi items that have no images', async () => {
