@@ -6,6 +6,10 @@ const nextConfig = {
     dirs: ['src'],
   },
 
+  experimental: {
+    scrollRestoration: true,
+  },
+
   reactStrictMode: false,
   swcMinify: true,
 
