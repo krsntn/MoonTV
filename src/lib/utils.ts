@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,no-console */
-import he from 'he';
-import Hls from 'hls.js';
 
 function getDoubanImageProxyConfig(): {
   proxyType:
@@ -72,6 +70,9 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
   pingTime: number; // 网络延迟（毫秒）
 }> {
   try {
+    // 按需加载 hls.js，避免把播放器库打包进每个使用 VideoCard 的页面
+    const { default: Hls } = await import('hls.js');
+
     // 直接使用m3u8 URL作为视频源，避免CORS问题
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
@@ -216,18 +217,4 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       }`
     );
   }
-}
-
-export function cleanHtmlTags(text: string): string {
-  if (!text) return '';
-
-  const cleanedText = text
-    .replace(/<[^>]+>/g, '\n') // 将 HTML 标签替换为换行
-    .replace(/\n+/g, '\n') // 将多个连续换行合并为一个
-    .replace(/[ \t]+/g, ' ') // 将多个连续空格和制表符合并为一个空格，但保留换行符
-    .replace(/^\n+|\n+$/g, '') // 去掉首尾换行
-    .trim(); // 去掉首尾空格
-
-  // 使用 he 库解码 HTML 实体
-  return he.decode(cleanedText);
 }
