@@ -20,8 +20,8 @@
 
 ## ✨ Features
 
-- 🧭 **Browse by Channel**: each Channel (movies, TV series, anime, variety shows) opens on a page of Shelves. Each Shelf leads to a full Listing with filters and numbered pages.
-- 🔗 **Shareable Listings**: filters and the page number are in the URL, so reload, Back, and shared links show the same results.
+- 🧭 **Browse by Channel**: each Channel (movies, TV series, anime, variety shows) opens on a page of Shelves. Each Shelf leads to a full Listing with filter rows (type, region, year, platform), four sort orders (popular, overall, newest, top rated), the result count, and numbered pages.
+- 🔗 **Shareable Listings**: filters, sort, and the page number are in the URL, so reload, Back, and shared links show the same results.
 - 🔍 **Multi-source search**: searches every video source at the same time and streams the results.
 - ▶️ **Fast playback**: playback starts at the first matching source. Sources that keep failing are skipped for 30 minutes.
 - 📺 **Player**: HLS.js and ArtPlayer, with AirPlay on Safari and iOS, and an experimental filter for ad segments.
