@@ -12,13 +12,14 @@ export interface BangumiCalendarData {
       score: number;
     };
     air_date: string;
+    // 部分条目没有图片，接口返回 null
     images: {
       large: string;
       common: string;
       medium: string;
       small: string;
       grid: string;
-    };
+    } | null;
   }[];
 }
 

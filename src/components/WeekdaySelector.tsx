@@ -5,6 +5,8 @@
 import React, { useEffect, useState } from 'react';
 
 interface WeekdaySelectorProps {
+  // 传入时为受控组件（由 URL 决定选中的星期）
+  selectedWeekday?: string;
   onWeekdayChange: (weekday: string) => void;
   className?: string;
 }
@@ -20,6 +22,7 @@ const weekdays = [
 ];
 
 const WeekdaySelector: React.FC<WeekdaySelectorProps> = ({
+  selectedWeekday: controlledWeekday,
   onWeekdayChange,
   className = '',
 }) => {
@@ -31,13 +34,16 @@ const WeekdaySelector: React.FC<WeekdaySelectorProps> = ({
     return weekdayMap[today];
   };
 
-  const [selectedWeekday, setSelectedWeekday] = useState<string>(
+  const [uncontrolledWeekday, setSelectedWeekday] = useState<string>(
     getTodayWeekday()
   );
+  const selectedWeekday = controlledWeekday ?? uncontrolledWeekday;
 
-  // 组件初始化时通知父组件默认选中的星期
+  // 非受控时，组件初始化时通知父组件默认选中的星期
   useEffect(() => {
-    onWeekdayChange(getTodayWeekday());
+    if (controlledWeekday === undefined) {
+      onWeekdayChange(getTodayWeekday());
+    }
   }, []); // 只在组件挂载时执行一次
 
   return (

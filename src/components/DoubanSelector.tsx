@@ -20,6 +20,9 @@ interface DoubanSelectorProps {
   onSecondaryChange: (value: string) => void;
   onMultiLevelChange?: (values: Record<string, string>) => void;
   onWeekdayChange: (weekday: string) => void;
+  // 当前筛选值和星期，用于从 URL 恢复选中状态
+  multiLevelValues?: Record<string, string>;
+  selectedWeekday?: string;
 }
 
 const DoubanSelector: React.FC<DoubanSelectorProps> = ({
@@ -30,6 +33,8 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
   onSecondaryChange,
   onMultiLevelChange,
   onWeekdayChange,
+  multiLevelValues,
+  selectedWeekday,
 }) => {
   // 为不同的选择器创建独立的refs和状态
   const primaryContainerRef = useRef<HTMLDivElement>(null);
@@ -396,6 +401,7 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
                 <MultiLevelSelector
                   key={`${type}-${primarySelection}`}
                   onChange={handleMultiLevelChange}
+                  selectedValues={multiLevelValues}
                   contentType={type}
                 />
               </div>
@@ -447,6 +453,7 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
                 <MultiLevelSelector
                   key={`${type}-${primarySelection}`}
                   onChange={handleMultiLevelChange}
+                  selectedValues={multiLevelValues}
                   contentType={type}
                 />
               </div>
@@ -480,7 +487,10 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
                 星期
               </span>
               <div className='overflow-x-auto'>
-                <WeekdaySelector onWeekdayChange={onWeekdayChange} />
+                <WeekdaySelector
+                  selectedWeekday={selectedWeekday}
+                  onWeekdayChange={onWeekdayChange}
+                />
               </div>
             </div>
           ) : (
@@ -495,12 +505,14 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
                   <MultiLevelSelector
                     key={`anime-tv-${primarySelection}`}
                     onChange={handleMultiLevelChange}
+                    selectedValues={multiLevelValues}
                     contentType='anime-tv'
                   />
                 ) : (
                   <MultiLevelSelector
                     key={`anime-movie-${primarySelection}`}
                     onChange={handleMultiLevelChange}
+                    selectedValues={multiLevelValues}
                     contentType='anime-movie'
                   />
                 )}
@@ -553,6 +565,7 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
                 <MultiLevelSelector
                   key={`${type}-${primarySelection}`}
                   onChange={handleMultiLevelChange}
+                  selectedValues={multiLevelValues}
                   contentType={type}
                 />
               </div>

@@ -5,6 +5,8 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  // 指针悬停或获得焦点时预取该页
+  onPagePrefetch?: (page: number) => void;
   className?: string;
 }
 
@@ -12,8 +14,17 @@ const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
   onPageChange,
+  onPagePrefetch,
   className,
 }) => {
+  const prefetchProps = (page: number) =>
+    onPagePrefetch && page >= 1 && page <= totalPages
+      ? {
+          onMouseEnter: () => onPagePrefetch(page),
+          onFocus: () => onPagePrefetch(page),
+        }
+      : {};
+
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
@@ -45,6 +56,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           key={1}
           onClick={() => handlePageClick(1)}
+          {...prefetchProps(1)}
           className={`px-3 py-1 text-sm rounded-md font-medium transition-all duration-200 cursor-pointer ${
             1 === currentPage
               ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
@@ -68,6 +80,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           key={i}
           onClick={() => handlePageClick(i)}
+          {...prefetchProps(i)}
           className={`px-3 py-1 text-sm rounded-md font-medium transition-all duration-200 cursor-pointer ${
             i === currentPage
               ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
@@ -91,6 +104,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           key={totalPages}
           onClick={() => handlePageClick(totalPages)}
+          {...prefetchProps(totalPages)}
           className={`px-3 py-1 text-sm rounded-md font-medium transition-all duration-200 cursor-pointer ${
             totalPages === currentPage
               ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
@@ -114,6 +128,7 @@ const Pagination: React.FC<PaginationProps> = ({
       <button
         onClick={handlePrevious}
         disabled={currentPage === 1}
+        {...prefetchProps(currentPage - 1)}
         className='px-3 py-1 text-sm rounded-md font-medium transition-all duration-200 cursor-pointer bg-gray-200 dark:bg-gray-700 text-gray-700 hover:bg-gray-300 dark:text-gray-400 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed'
       >
         <ChevronLeft className='w-4 h-4' />
@@ -121,7 +136,8 @@ const Pagination: React.FC<PaginationProps> = ({
       {renderPageNumbers()}
       <button
         onClick={handleNext}
-        disabled={currentPage === totalPages}
+        disabled={currentPage >= totalPages}
+        {...prefetchProps(currentPage + 1)}
         className='px-3 py-1 text-sm rounded-md font-medium transition-all duration-200 cursor-pointer bg-gray-200 dark:bg-gray-700 text-gray-700 hover:bg-gray-300 dark:text-gray-400 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed'
       >
         <ChevronRight className='w-4 h-4' />
