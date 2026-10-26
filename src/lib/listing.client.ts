@@ -2,10 +2,8 @@
 
 import { GetBangumiCalendarData } from './bangumi.client';
 import {
-  fetchDoubanCategories,
   fetchDoubanList,
   fetchDoubanRecommends,
-  getDoubanCategories,
   getDoubanList,
   getDoubanProxyConfig,
   getDoubanRecommends,
@@ -23,6 +21,8 @@ import { DoubanItem, DoubanResult } from './types';
 export interface ResultPage {
   items: DoubanItem[];
   totalPages: number;
+  // 豆瓣返回的条目总数（最多 500）；部分数据源没有
+  total: number | null;
 }
 
 // 豆瓣的失败大多是短暂限流：1 秒后和 3 秒后各重试一次
@@ -72,7 +72,7 @@ async function fetchResultPage(
   query: ListingQuery,
   customCategories: CustomCategory[]
 ): Promise<ResultPage> {
-  const { channel, primary, secondary, filters, page } = query;
+  const { channel, form, filters, sort, page } = query;
   const pageStart = (page - 1) * RESULT_PAGE_SIZE;
   let load: () => Promise<DoubanResult>;
   // 同一请求经豆瓣 CDN 镜像（腾讯云）由浏览器直接获取
@@ -80,9 +80,9 @@ async function fetchResultPage(
 
   if (channel === 'custom') {
     const category = customCategories.find(
-      (cat) => cat.type === primary && cat.query === secondary
+      (cat) => cat.type === form && cat.query === query.category
     );
-    if (!category) return { items: [], totalPages: 1 };
+    if (!category) return { items: [], totalPages: 1, total: null };
     const params = {
       tag: category.query,
       type: category.type,
@@ -110,53 +110,35 @@ async function fetchResultPage(
       rate: item.rating?.score?.toString() || '',
       year: item.air_date?.split('-')?.[0] || '',
     }));
-    return { items, totalPages: 1 };
-  } else if (channel === 'anime' || primary === '全部') {
-    const params =
-      channel === 'anime'
-        ? {
-            kind: (primary === '番剧' ? 'tv' : 'movie') as 'tv' | 'movie',
-            pageLimit: RESULT_PAGE_SIZE,
-            pageStart,
-            category: '动画',
-            format: primary === '番剧' ? '电视剧' : '',
-            region: filters.region || '',
-            year: filters.year || '',
-            platform: filters.platform || '',
-            sort: filters.sort || '',
-            label: filters.label || '',
-          }
-        : {
-            kind: channel === 'show' ? 'tv' : (channel as 'tv' | 'movie'),
-            pageLimit: RESULT_PAGE_SIZE,
-            pageStart,
-            category: filters.type || '',
-            format:
-              channel === 'show'
-                ? '综艺'
-                : channel === 'tv'
-                ? '电视剧'
-                : '电影',
-            region: filters.region || '',
-            year: filters.year || '',
-            platform: filters.platform || '',
-            sort: filters.sort || '',
-            label: filters.label || '',
-          };
-    load = () => getDoubanRecommends(params);
-    mirror = () => fetchDoubanRecommends(params, '', true, false);
+    return { items, totalPages: 1, total: null };
   } else {
-    // 剧集和综艺的 kind 统一为 tv，category 使用频道本身
-    const isTv = channel === 'tv' || channel === 'show';
+    // 所有豆瓣 Listing 都使用 recommend 接口，筛选和排序可以任意组合
+    const isAnime = channel === 'anime';
+    const isSeries = isAnime ? form === '番剧' : channel !== 'movie';
     const params = {
-      kind: (isTv ? 'tv' : 'movie') as 'tv' | 'movie',
-      category: isTv ? channel : primary,
-      type: secondary,
+      kind: (isSeries ? 'tv' : 'movie') as 'tv' | 'movie',
       pageLimit: RESULT_PAGE_SIZE,
       pageStart,
+      category: isAnime ? '动画' : filters.type || 'all',
+      format: isAnime
+        ? isSeries
+          ? '电视剧'
+          : ''
+        : channel === 'show'
+        ? '综艺'
+        : channel === 'tv'
+        ? '电视剧'
+        : '电影',
+      label: isAnime ? filters.label || 'all' : 'all',
+      region: filters.region || 'all',
+      year: filters.year || 'all',
+      platform: isSeries ? filters.platform || 'all' : 'all',
+      sort,
+      // “最新”按首播时间排序时只显示 7 分及以上，排除大量未评分的冷门条目
+      ...(sort === 'R' ? { scoreRange: '7,10' } : {}),
     };
-    load = () => getDoubanCategories(params);
-    mirror = () => fetchDoubanCategories(params, '', true, false);
+    load = () => getDoubanRecommends(params);
+    mirror = () => fetchDoubanRecommends(params, '', true, false);
   }
 
   const useMirror = getDoubanProxyConfig().proxyType === 'direct';
@@ -168,6 +150,7 @@ async function fetchResultPage(
   return {
     items: data.list,
     totalPages: getTotalPages(data.total, page, data.list.length),
+    total: typeof data.total === 'number' ? data.total : null,
   };
 }
 

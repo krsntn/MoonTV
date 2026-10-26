@@ -15,12 +15,20 @@ The entry view of a Channel, which shows a few rows of titles that each lead to 
 _Avoid_: channel home, category page
 
 **Shelf**:
-A titled row of titles on the home page or a Channel page that leads to a filtered Listing.
+A titled row on the home page or a Channel page that shows the first Result page of one filtered, sorted Listing.
 _Avoid_: row, rail, section
 
 **Listing**:
-The browse view of one Channel, which shows titles that match the selected filters.
+The browse view of one Channel, which shows titles that match the selected filters, in the selected sort order.
 _Avoid_: douban page, browse page, list
+
+**Filter**:
+One dimension that narrows a Listing (for example type, region, or year); each filter has at most one selected value.
+_Avoid_: category (alone), tag
+
+**Sort**:
+The order of a Listing's titles: recent popularity, overall, newest, or highest rated.
+_Avoid_: order, ranking
 
 **Result page**:
 One numbered page of a Listing.

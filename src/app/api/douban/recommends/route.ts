@@ -51,6 +51,11 @@ export async function GET(request: NextRequest) {
   const sort = searchParams.get('sort') === 'T' ? '' : searchParams.get('sort');
   const label =
     searchParams.get('label') === 'all' ? '' : searchParams.get('label');
+  // 评分范围，例如 '7,10'；格式不对时使用默认 '0,10'
+  const scoreParam = searchParams.get('score_range') || '';
+  const scoreRange = /^\d+(\.\d+)?,\d+(\.\d+)?$/.test(scoreParam)
+    ? scoreParam
+    : '0,10';
 
   if (!kind) {
     return NextResponse.json({ error: '缺少必要参数: kind' }, { status: 400 });
@@ -91,7 +96,7 @@ export async function GET(request: NextRequest) {
   params.append('count', pageLimit.toString());
   params.append('selected_categories', JSON.stringify(selectedCategories));
   params.append('uncollect', 'false');
-  params.append('score_range', '0,10');
+  params.append('score_range', scoreRange);
   params.append('tags', tags.join(','));
   if (sort) {
     params.append('sort', sort);

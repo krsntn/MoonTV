@@ -326,6 +326,8 @@ interface DoubanRecommendsParams {
   year?: string;
   platform?: string;
   sort?: string;
+  // 评分范围，例如 '7,10'；默认 '0,10'
+  scoreRange?: string;
 }
 
 export async function getDoubanRecommends(
@@ -342,6 +344,7 @@ export async function getDoubanRecommends(
     year,
     platform,
     sort,
+    scoreRange,
   } = params;
   const { proxyType, proxyUrl } = getDoubanProxyConfig();
   switch (proxyType) {
@@ -357,7 +360,9 @@ export async function getDoubanRecommends(
     case 'direct':
     default:
       const response = await fetch(
-        `/api/douban/recommends?kind=${kind}&limit=${pageLimit}&start=${pageStart}&category=${category}&format=${format}&region=${region}&year=${year}&platform=${platform}&sort=${sort}&label=${label}`
+        `/api/douban/recommends?kind=${kind}&limit=${pageLimit}&start=${pageStart}&category=${category}&format=${format}&region=${region}&year=${year}&platform=${platform}&sort=${sort}&label=${label}${
+          scoreRange ? `&score_range=${scoreRange}` : ''
+        }`
       );
 
       return response.json();
@@ -433,7 +438,7 @@ export async function fetchDoubanRecommends(
   reqParams.append('count', pageLimit.toString());
   reqParams.append('selected_categories', JSON.stringify(selectedCategories));
   reqParams.append('uncollect', 'false');
-  reqParams.append('score_range', '0,10');
+  reqParams.append('score_range', params.scoreRange || '0,10');
   reqParams.append('tags', tags.join(','));
   if (sort) {
     reqParams.append('sort', sort);

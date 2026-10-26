@@ -1,8 +1,8 @@
 import { GetBangumiCalendarData } from '@/lib/bangumi.client';
 import {
-  fetchDoubanCategories,
-  getDoubanCategories,
+  fetchDoubanRecommends,
   getDoubanProxyConfig,
+  getDoubanRecommends,
 } from '@/lib/douban.client';
 import { parseListingQuery } from '@/lib/listing';
 import {
@@ -13,10 +13,8 @@ import {
 } from '@/lib/listing.client';
 
 jest.mock('@/lib/douban.client', () => ({
-  fetchDoubanCategories: jest.fn(),
   fetchDoubanList: jest.fn(),
   fetchDoubanRecommends: jest.fn(),
-  getDoubanCategories: jest.fn(),
   getDoubanList: jest.fn(),
   getDoubanProxyConfig: jest.fn(),
   getDoubanRecommends: jest.fn(),
@@ -25,12 +23,26 @@ jest.mock('@/lib/bangumi.client', () => ({
   GetBangumiCalendarData: jest.fn(),
 }));
 
-const mockCategories = getDoubanCategories as jest.MockedFunction<
-  typeof getDoubanCategories
+const mockCategories = getDoubanRecommends as jest.MockedFunction<
+  typeof getDoubanRecommends
 >;
-const mockMirror = fetchDoubanCategories as jest.MockedFunction<
-  typeof fetchDoubanCategories
+const mockMirror = fetchDoubanRecommends as jest.MockedFunction<
+  typeof fetchDoubanRecommends
 >;
+
+// 电影 Listing 第 2 页（默认排序）的 recommend 请求参数
+const moviePage2 = {
+  kind: 'movie',
+  pageLimit: 30,
+  pageStart: 30,
+  category: 'all',
+  format: '电影',
+  label: 'all',
+  region: 'all',
+  year: 'all',
+  platform: 'all',
+  sort: 'U',
+};
 const mockProxyConfig = getDoubanProxyConfig as jest.MockedFunction<
   typeof getDoubanProxyConfig
 >;
@@ -75,13 +87,58 @@ describe('loadResultPage', () => {
     const page = await loadResultPage(query('type=movie&page=3'), []);
 
     expect(mockCategories).toHaveBeenCalledWith({
-      kind: 'movie',
-      category: '热门',
-      type: '全部',
-      pageLimit: 30,
+      ...moviePage2,
       pageStart: 60,
     });
-    expect(page).toEqual({ items: [item], totalPages: 3 });
+    expect(page).toEqual({ items: [item], totalPages: 3, total: 61 });
+  });
+
+  it('passes the filters and the sort to the recommend API', async () => {
+    mockCategories.mockResolvedValue(success);
+
+    await loadResultPage(
+      query('type=tv&genre=悬疑&region=韩国&platform=Netflix&sort=S'),
+      []
+    );
+
+    expect(mockCategories).toHaveBeenCalledWith({
+      kind: 'tv',
+      pageLimit: 30,
+      pageStart: 0,
+      category: '悬疑',
+      format: '电视剧',
+      label: 'all',
+      region: '韩国',
+      year: 'all',
+      platform: 'Netflix',
+      sort: 'S',
+    });
+  });
+
+  it('hides unrated titles when sorting by newest', async () => {
+    mockCategories.mockResolvedValue(success);
+
+    await loadResultPage(query('type=movie&sort=R'), []);
+
+    expect(mockCategories).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'R', scoreRange: '7,10' })
+    );
+  });
+
+  it('uses the anime form for kind and format', async () => {
+    mockCategories.mockResolvedValue(success);
+
+    await loadResultPage(query('type=anime&form=剧场版&label=治愈'), []);
+
+    expect(mockCategories).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'movie',
+        category: '动画',
+        format: '',
+        label: '治愈',
+        platform: 'all',
+      })
+    );
   });
 
   it('shares one request between a prefetch and a click on the same Result page', async () => {
@@ -103,20 +160,13 @@ describe('loadResultPage', () => {
     const promise = loadResultPage(query('type=movie&page=2'), []);
     await flushRetries();
 
-    await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
+    await expect(promise).resolves.toEqual({
+      items: [item],
+      totalPages: 3,
+      total: 61,
+    });
     expect(mockCategories).toHaveBeenCalledTimes(1);
-    expect(mockMirror).toHaveBeenCalledWith(
-      {
-        kind: 'movie',
-        category: '热门',
-        type: '全部',
-        pageLimit: 30,
-        pageStart: 30,
-      },
-      '',
-      true,
-      false
-    );
+    expect(mockMirror).toHaveBeenCalledWith(moviePage2, '', true, false);
   });
 
   it('tries the server again when the mirror also fails', async () => {
@@ -126,7 +176,11 @@ describe('loadResultPage', () => {
     const promise = loadResultPage(query('type=movie&page=2'), []);
     await flushRetries();
 
-    await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
+    await expect(promise).resolves.toEqual({
+      items: [item],
+      totalPages: 3,
+      total: 61,
+    });
     expect(mockCategories).toHaveBeenCalledTimes(2);
     expect(mockMirror).toHaveBeenCalledTimes(1);
   });
@@ -145,7 +199,7 @@ describe('loadResultPage', () => {
     mockCategories.mockResolvedValue(success);
     await expect(
       loadResultPage(query('type=movie&page=2'), [])
-    ).resolves.toEqual({ items: [item], totalPages: 3 });
+    ).resolves.toEqual({ items: [item], totalPages: 3, total: 61 });
   });
 
   it('only retries the configured source when a proxy is set', async () => {
@@ -158,7 +212,11 @@ describe('loadResultPage', () => {
     const promise = loadResultPage(query('type=movie&page=2'), []);
     await flushRetries();
 
-    await expect(promise).resolves.toEqual({ items: [item], totalPages: 3 });
+    await expect(promise).resolves.toEqual({
+      items: [item],
+      totalPages: 3,
+      total: 61,
+    });
     expect(mockCategories).toHaveBeenCalledTimes(3);
     expect(mockMirror).not.toHaveBeenCalled();
   });
@@ -183,12 +241,13 @@ describe('loadResultPage', () => {
     await expect(loadResultPage(query('type=anime'), [])).resolves.toEqual({
       items: [{ id: '7', title: 'Name', poster: '', rate: '', year: '2026' }],
       totalPages: 1,
+      total: null,
     });
   });
 
   it('returns an empty Result page for an unknown custom category', async () => {
     await expect(
-      loadResultPage(query('type=custom&primary=movie&secondary=x'), [])
-    ).resolves.toEqual({ items: [], totalPages: 1 });
+      loadResultPage(query('type=custom&form=movie&category=x'), [])
+    ).resolves.toEqual({ items: [], totalPages: 1, total: null });
   });
 });

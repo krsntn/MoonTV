@@ -7,17 +7,20 @@ import { Suspense } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getCustomCategories } from '@/lib/config.client';
+import { getFilterRows } from '@/lib/filters';
 import {
-  areFiltersEqual,
   buildListingSearch,
   CustomCategory,
   DEFAULT_FILTERS,
   getCustomDefaults,
   getListingKey,
   isBangumiSchedule,
+  isLegacyListingSearch,
+  isSortable,
   ListingQuery,
   parseListingQuery,
   RESULT_PAGE_SIZE,
+  SortKey,
 } from '@/lib/listing';
 import {
   loadResultPage,
@@ -27,10 +30,10 @@ import {
 } from '@/lib/listing.client';
 
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
-import DoubanCustomSelector from '@/components/DoubanCustomSelector';
-import DoubanSelector from '@/components/DoubanSelector';
+import FilterPanel from '@/components/FilterPanel';
 import PageLayout from '@/components/PageLayout';
 import Pagination from '@/components/Pagination';
+import SortBar from '@/components/SortBar';
 import VideoCard from '@/components/VideoCard';
 
 // 生成骨架屏数据
@@ -79,9 +82,16 @@ function DoubanPageClient() {
     []
   );
 
-  // 自定义频道：分类加载后补全默认的一级和二级选择
+  // 旧版链接（primary / secondary）：改写为新的 URL 格式
   useEffect(() => {
-    if (type !== 'custom' || !customCategories || query.primary) return;
+    if (isLegacyListingSearch(new URLSearchParams(searchParams.toString()))) {
+      navigate(query, 'replace');
+    }
+  }, [queryKey]);
+
+  // 自定义频道：分类加载后补全默认的类型和分类
+  useEffect(() => {
+    if (type !== 'custom' || !customCategories || query.form) return;
     const defaults = getCustomDefaults(customCategories);
     if (defaults) navigate({ ...query, ...defaults }, 'replace');
   }, [queryKey, customCategories]);
@@ -90,7 +100,7 @@ function DoubanPageClient() {
   const ready =
     type !== 'custom' ||
     (customCategories !== null &&
-      (customCategories.length === 0 || Boolean(query.primary)));
+      (customCategories.length === 0 || Boolean(query.form)));
 
   // 加载当前结果页；参数变化时丢弃旧请求的结果
   useEffect(() => {
@@ -145,55 +155,67 @@ function DoubanPageClient() {
     [query, ready, customCategories]
   );
 
-  // 处理选择器变化：筛选变化后回到第一页
-  const handlePrimaryChange = useCallback(
-    (value: string) => {
-      if (value === query.primary) return;
-
-      let secondary = query.secondary;
-      if (type === 'custom') {
-        const firstCategory = customCategories?.find(
-          (cat) => cat.type === value
-        );
-        if (firstCategory) secondary = firstCategory.query;
-      } else if ((type === 'tv' || type === 'show') && value === '最近热门') {
-        secondary = type;
+  // 筛选变化后回到第一页
+  const handleFilterChange = useCallback(
+    (key: string, value: string) => {
+      if (key === 'form') {
+        if (value === query.form) return;
+        if (type === 'custom') {
+          const firstCategory = customCategories?.find(
+            (cat) => cat.type === value
+          );
+          navigate({
+            ...query,
+            form: value,
+            category: firstCategory?.query || '',
+            page: 1,
+          });
+        } else {
+          // 动漫切换形式时，类型和平台选项不同，清空筛选
+          navigate({
+            ...query,
+            form: value,
+            filters: { ...DEFAULT_FILTERS },
+            page: 1,
+          });
+        }
+        return;
       }
 
+      if (key === 'category' || key === 'weekday') {
+        if (value === query[key]) return;
+        navigate({ ...query, [key]: value, page: 1 });
+        return;
+      }
+
+      if (value === (query.filters[key] ?? 'all')) return;
       navigate({
         ...query,
-        primary: value,
-        secondary,
-        filters: { ...DEFAULT_FILTERS },
+        filters: { ...query.filters, [key]: value },
         page: 1,
       });
     },
-    [query, customCategories, navigate]
+    [query, type, customCategories, navigate]
   );
 
-  const handleSecondaryChange = useCallback(
-    (value: string) => {
-      if (value === query.secondary) return;
-      navigate({ ...query, secondary: value, page: 1 });
+  const handleSortChange = useCallback(
+    (sort: SortKey) => {
+      if (sort === query.sort) return;
+      navigate({ ...query, sort, page: 1 });
     },
     [query, navigate]
   );
 
-  const handleMultiLevelChange = useCallback(
-    (values: Record<string, string>) => {
-      if (areFiltersEqual(values, query.filters)) return;
-      navigate({ ...query, filters: values, page: 1 });
-    },
-    [query, navigate]
+  const filterRows = useMemo(
+    () => getFilterRows(query, customCategories || []),
+    [queryKey, customCategories]
   );
-
-  const handleWeekdayChange = useCallback(
-    (weekday: string) => {
-      if (weekday === query.weekday) return;
-      navigate({ ...query, weekday, page: 1 });
-    },
-    [query, navigate]
-  );
+  const filterValues = {
+    ...query.filters,
+    form: query.form,
+    category: query.category,
+    weekday: query.weekday,
+  };
 
   const getPageTitle = () => {
     // 根据 type 生成标题
@@ -230,7 +252,7 @@ function DoubanPageClient() {
   return (
     <PageLayout activePath={getActivePath()}>
       <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 页面标题和选择器 */}
+        {/* 页面标题和筛选 */}
         <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
           {/* 页面标题 */}
           <div>
@@ -242,31 +264,18 @@ function DoubanPageClient() {
             </p>
           </div>
 
-          {/* 选择器组件 */}
-          {type !== 'custom' ? (
-            <div className='bg-white/60 dark:bg-gray-800/40 rounded-2xl p-4 sm:p-6 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
-              <DoubanSelector
-                type={type}
-                primarySelection={query.primary}
-                secondarySelection={query.secondary}
-                multiLevelValues={query.filters}
-                selectedWeekday={query.weekday}
-                onPrimaryChange={handlePrimaryChange}
-                onSecondaryChange={handleSecondaryChange}
-                onMultiLevelChange={handleMultiLevelChange}
-                onWeekdayChange={handleWeekdayChange}
-              />
-            </div>
-          ) : (
-            <div className='bg-white/60 dark:bg-gray-800/40 rounded-2xl p-4 sm:p-6 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
-              <DoubanCustomSelector
-                customCategories={customCategories || []}
-                primarySelection={query.primary}
-                secondarySelection={query.secondary}
-                onPrimaryChange={handlePrimaryChange}
-                onSecondaryChange={handleSecondaryChange}
-              />
-            </div>
+          <FilterPanel
+            rows={filterRows}
+            values={filterValues}
+            onChange={handleFilterChange}
+          />
+
+          {isSortable(query) && (
+            <SortBar
+              sort={query.sort}
+              total={status === 'ready' ? resultPage?.total ?? null : null}
+              onChange={handleSortChange}
+            />
           )}
         </div>
 
