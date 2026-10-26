@@ -11,6 +11,11 @@ const nextConfig = {
   },
 
   reactStrictMode: false,
+
+  // 频道页已移除：旧链接直接进入对应的 Listing（查询参数会保留）
+  async redirects() {
+    return [{ source: '/channel', destination: '/douban', permanent: false }];
+  },
   swcMinify: true,
 
   // Uncoment to add domain whitelist

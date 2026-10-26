@@ -10,12 +10,8 @@ krsnTV is a video browsing and playback app. It shows titles from a Catalog and 
 One content type that a viewer can browse: 电影, 电视剧, 综艺, or 动漫.
 _Avoid_: type, category, section
 
-**Channel page**:
-The entry view of a Channel, which shows a few rows of titles that each lead to a filtered Listing.
-_Avoid_: channel home, category page
-
 **Shelf**:
-A titled row on the home page or a Channel page that shows the first Result page of one filtered, sorted Listing.
+A titled row on the home page that shows the first Result page of one filtered, sorted Listing.
 _Avoid_: row, rail, section
 
 **Listing**:

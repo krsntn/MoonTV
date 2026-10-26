@@ -28,22 +28,22 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     {
       icon: Film,
       label: '电影',
-      href: '/channel?type=movie',
+      href: '/douban?type=movie',
     },
     {
       icon: Tv,
       label: '剧集',
-      href: '/channel?type=tv',
+      href: '/douban?type=tv',
     },
     {
       icon: Cat,
       label: '动漫',
-      href: '/channel?type=anime',
+      href: '/douban?type=anime',
     },
     {
       icon: Clover,
       label: '综艺',
-      href: '/channel?type=show',
+      href: '/douban?type=show',
     },
   ]);
 
