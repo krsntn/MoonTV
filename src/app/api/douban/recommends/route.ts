@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import { fetchDoubanData } from '@/lib/douban';
+import { cached } from '@/lib/memory-cache';
 import { DoubanResult } from '@/lib/types';
 
 interface DoubanRecommendApiResponse {
@@ -23,7 +24,10 @@ interface DoubanRecommendApiResponse {
   }>;
 }
 
-export const runtime = 'edge';
+// Node 运行时：内存缓存在同一进程内共享
+export const dynamic = 'force-dynamic';
+// 所有 fetch 都不进入 Next.js 的 Data Cache（包括存储层的请求）
+export const fetchCache = 'force-no-store';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -94,8 +98,9 @@ export async function GET(request: NextRequest) {
   const target = `${baseUrl}?${params.toString()}`;
   console.log(target);
   try {
-    const doubanData = await fetchDoubanData<DoubanRecommendApiResponse>(
-      target
+    const cacheTime = await getCacheTime();
+    const doubanData = await cached(target, cacheTime, () =>
+      fetchDoubanData<DoubanRecommendApiResponse>(target)
     );
     const list = doubanData.items
       .filter((item) => item.type == 'movie' || item.type == 'tv')
@@ -110,9 +115,9 @@ export async function GET(request: NextRequest) {
       code: 200,
       message: '获取成功',
       list: list,
+      total: doubanData.total,
     };
 
-    const cacheTime = await getCacheTime();
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

@@ -110,6 +110,8 @@ export interface DoubanResult {
   code: number;
   message: string;
   list: DoubanItem[];
+  // 豆瓣返回的条目总数，部分接口没有
+  total?: number;
 }
 
 // 跳过片头片尾配置数据结构

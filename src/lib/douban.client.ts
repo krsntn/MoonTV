@@ -171,6 +171,7 @@ export async function fetchDoubanCategories(
       code: 200,
       message: '获取成功',
       list: list,
+      total: doubanData.total,
     };
   } catch (error) {
     // 触发全局错误提示
@@ -301,6 +302,7 @@ export async function fetchDoubanList(
       code: 200,
       message: '获取成功',
       list: list,
+      total: doubanData.total,
     };
   } catch (error) {
     // 触发全局错误提示
@@ -465,6 +467,7 @@ async function fetchDoubanRecommends(
       code: 200,
       message: '获取成功',
       list: list,
+      total: doubanData.total,
     };
   } catch (error) {
     throw new Error(`获取豆瓣推荐数据失败: ${(error as Error).message}`);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
 import { fetchDoubanData } from '@/lib/douban';
+import { cached } from '@/lib/memory-cache';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
 interface DoubanCategoryApiResponse {
@@ -20,7 +21,10 @@ interface DoubanCategoryApiResponse {
   }>;
 }
 
-export const runtime = 'edge';
+// Node 运行时：内存缓存在同一进程内共享
+export const dynamic = 'force-dynamic';
+// 所有 fetch 都不进入 Next.js 的 Data Cache（包括存储层的请求）
+export const fetchCache = 'force-no-store';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -64,8 +68,12 @@ export async function GET(request: Request) {
   const target = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
 
   try {
+    const cacheTime = await getCacheTime();
+
     // 调用豆瓣 API
-    const doubanData = await fetchDoubanData<DoubanCategoryApiResponse>(target);
+    const doubanData = await cached(target, cacheTime, () =>
+      fetchDoubanData<DoubanCategoryApiResponse>(target)
+    );
 
     // 转换数据格式
     const list: DoubanItem[] = doubanData.items.map((item) => ({
@@ -80,9 +88,9 @@ export async function GET(request: Request) {
       code: 200,
       message: '获取成功',
       list: list,
+      total: doubanData.total,
     };
 
-    const cacheTime = await getCacheTime();
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
