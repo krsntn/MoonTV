@@ -1,9 +1,10 @@
-// Shelf：首页或频道页上带标题的一行内容，每个 Shelf 对应 Listing 的第一页
+// Shelf：首页或频道页上带标题的一行内容，显示对应 Listing 的第一个结果页
 
 import {
   Channel,
   DEFAULT_FILTERS,
-  getChannelDefaults,
+  DEFAULT_SORT,
+  getDefaultForm,
   getTodayWeekday,
   ListingQuery,
 } from './listing';
@@ -22,8 +23,10 @@ function shelf(
     title,
     query: {
       channel,
-      ...getChannelDefaults(channel),
+      form: getDefaultForm(channel),
+      category: '',
       filters: { ...DEFAULT_FILTERS },
+      sort: DEFAULT_SORT,
       weekday: getTodayWeekday(),
       page: 1,
       ...overrides,
@@ -31,11 +34,8 @@ function shelf(
   };
 }
 
-function genre(title: string): Shelf {
-  return shelf(title, 'movie', {
-    primary: '全部',
-    filters: { ...DEFAULT_FILTERS, type: title },
-  });
+function filtered(key: string, value: string): Partial<ListingQuery> {
+  return { filters: { ...DEFAULT_FILTERS, [key]: value } };
 }
 
 export function getChannelShelves(channel: Channel): Shelf[] {
@@ -43,32 +43,32 @@ export function getChannelShelves(channel: Channel): Shelf[] {
     case 'movie':
       return [
         shelf('热门电影', 'movie'),
-        shelf('最新电影', 'movie', { primary: '最新' }),
-        shelf('豆瓣高分', 'movie', { primary: '豆瓣高分' }),
-        genre('喜剧'),
-        genre('动作'),
-        genre('爱情'),
+        shelf('最新电影', 'movie', { sort: 'R' }),
+        shelf('豆瓣高分', 'movie', { sort: 'S' }),
+        shelf('喜剧', 'movie', filtered('type', '喜剧')),
+        shelf('动作', 'movie', filtered('type', '动作')),
+        shelf('爱情', 'movie', filtered('type', '爱情')),
       ];
     case 'tv':
       return [
         shelf('最近热门', 'tv'),
-        shelf('国产剧', 'tv', { secondary: 'tv_domestic' }),
-        shelf('欧美剧', 'tv', { secondary: 'tv_american' }),
-        shelf('韩剧', 'tv', { secondary: 'tv_korean' }),
-        shelf('日剧', 'tv', { secondary: 'tv_japanese' }),
-        shelf('纪录片', 'tv', { secondary: 'tv_documentary' }),
+        shelf('国产剧', 'tv', filtered('region', '中国大陆')),
+        shelf('欧美剧', 'tv', filtered('region', '欧美')),
+        shelf('韩剧', 'tv', filtered('region', '韩国')),
+        shelf('日剧', 'tv', filtered('region', '日本')),
+        shelf('悬疑剧', 'tv', filtered('type', '悬疑')),
       ];
     case 'show':
       return [
         shelf('最近热门', 'show'),
-        shelf('国内综艺', 'show', { secondary: 'show_domestic' }),
-        shelf('国外综艺', 'show', { secondary: 'show_foreign' }),
+        shelf('国内综艺', 'show', filtered('region', '中国大陆')),
+        shelf('国外综艺', 'show', filtered('region', '国外')),
       ];
     case 'anime':
       return [
         shelf('今日放送', 'anime'),
-        shelf('番剧', 'anime', { primary: '番剧' }),
-        shelf('剧场版', 'anime', { primary: '剧场版' }),
+        shelf('番剧', 'anime', { form: '番剧' }),
+        shelf('剧场版', 'anime', { form: '剧场版' }),
       ];
     default:
       return [];
