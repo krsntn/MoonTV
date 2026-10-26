@@ -43,10 +43,11 @@ import PageLayout from '@/components/PageLayout';
 
 // 统一弹窗方法（必须在首次使用前定义）
 const showError = (message: string) =>
-  Swal.fire({ icon: 'error', title: '错误', text: message });
+  Swal.fire({ theme: 'dark', icon: 'error', title: '错误', text: message });
 
 const showSuccess = (message: string) =>
   Swal.fire({
+    theme: 'dark',
     icon: 'success',
     title: '成功',
     text: message,
@@ -231,6 +232,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   const handleDeleteUser = async (username: string) => {
     const { isConfirmed } = await Swal.fire({
+      theme: 'dark',
       title: '确认删除用户',
       text: `删除用户 ${username} 将同时删除其搜索历史、播放记录和收藏夹，此操作不可恢复！`,
       icon: 'warning',
@@ -1987,6 +1989,7 @@ function AdminPageClient() {
   // 新增: 重置配置处理函数
   const handleResetConfig = async () => {
     const { isConfirmed } = await Swal.fire({
+      theme: 'dark',
       title: '确认重置配置',
       text: '此操作将重置用户封禁和管理员设置、自定义视频源，站点配置将重置为默认值，是否继续？',
       icon: 'warning',
