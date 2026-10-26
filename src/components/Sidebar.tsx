@@ -130,22 +130,22 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     {
       icon: Film,
       label: '电影',
-      href: '/douban?type=movie',
+      href: '/channel?type=movie',
     },
     {
       icon: Tv,
       label: '剧集',
-      href: '/douban?type=tv',
+      href: '/channel?type=tv',
     },
     {
       icon: Cat,
       label: '动漫',
-      href: '/douban?type=anime',
+      href: '/channel?type=anime',
     },
     {
       icon: Clover,
       label: '综艺',
-      href: '/douban?type=show',
+      href: '/channel?type=show',
     },
   ]);
 
