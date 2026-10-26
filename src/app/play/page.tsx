@@ -882,7 +882,8 @@ function PlayPageClient() {
 
             setLoadingStage('ready');
             setLoadingMessage('✨ 准备就绪，即将开始播放...');
-            setTimeout(() => setLoading(false), 500);
+            // 立即创建播放器，不再固定等待 500ms
+            setLoading(false);
           }
         } catch (err) {
           console.error('快速获取视频详情失败，将回退到搜索流程:', err);
@@ -936,7 +937,8 @@ function PlayPageClient() {
 
           setLoadingStage('ready');
           setLoadingMessage('✨ 准备就绪，即将开始播放...');
-          setTimeout(() => setLoading(false), 500);
+          // 第一个匹配结果到达后立即创建播放器
+          setLoading(false);
         }
       });
     };
