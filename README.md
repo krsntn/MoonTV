@@ -20,7 +20,7 @@
 
 ## ✨ Features
 
-- 🧭 **Browse by Channel**: each Channel (movies, TV series, anime, variety shows) opens on a page of Shelves. Each Shelf leads to a full Listing with filter rows (type, region, year, platform), four sort orders (popular, overall, newest, top rated), the result count, and numbered pages.
+- 🧭 **Browse by Channel**: each Channel (movies, TV series, anime, variety shows) opens a Listing with filter rows (type, region, year, platform), four sort orders (popular, overall, newest, top rated), the result count, and numbered pages. The home page shows the first titles of popular Listings.
 - 🔗 **Shareable Listings**: filters, sort, and the page number are in the URL, so reload, Back, and shared links show the same results.
 - 🔍 **Multi-source search**: searches every video source at the same time and streams the results.
 - ▶️ **Fast playback**: playback starts at the first matching source. Sources that keep failing are skipped for 30 minutes.
@@ -33,7 +33,6 @@
 <details>
   <summary>Screenshots</summary>
   <img src="docs/screenshots/home.jpg" alt="Home page with the hero banner and Continue Watching" style="max-width:720px">
-  <img src="docs/screenshots/channel.jpg" alt="Movie Channel page with Shelves" style="max-width:720px">
   <img src="docs/screenshots/listing.jpg" alt="Movie Listing with filters" style="max-width:720px">
 </details>
 
