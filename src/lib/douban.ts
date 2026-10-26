@@ -9,8 +9,10 @@ export async function fetchDoubanData<T>(url: string): Promise<T> {
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
 
   // 设置请求选项，包括信号和头部
-  const fetchOptions = {
+  const fetchOptions: RequestInit = {
     signal: controller.signal,
+    // 不使用 Next.js 的 Data Cache（Node 运行时会默认缓存一年），缓存由 memory-cache 负责
+    cache: 'no-store',
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',

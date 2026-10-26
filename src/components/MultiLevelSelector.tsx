@@ -17,11 +17,14 @@ interface MultiLevelCategory {
 
 interface MultiLevelSelectorProps {
   onChange: (values: Record<string, string>) => void;
+  // 当前筛选值（与 onChange 的格式相同），用于从 URL 恢复选中状态
+  selectedValues?: Record<string, string>;
   contentType?: 'movie' | 'tv' | 'show' | 'anime-tv' | 'anime-movie';
 }
 
 const MultiLevelSelector: React.FC<MultiLevelSelectorProps> = ({
   onChange,
+  selectedValues,
   contentType = 'movie',
 }) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -332,6 +335,22 @@ const MultiLevelSelector: React.FC<MultiLevelSelectorProps> = ({
       ],
     },
   ];
+
+  // 将父组件的筛选值（排序为 value，其他为 label）转换回内部选项值
+  const selectedValuesKey = JSON.stringify(selectedValues ?? null);
+  useEffect(() => {
+    if (!selectedValues) return;
+    const nextValues: Record<string, string> = {};
+    Object.entries(selectedValues).forEach(([key, value]) => {
+      const category = categories.find((cat) => cat.key === key);
+      const option = category?.options.find((opt) =>
+        key === 'sort' ? opt.value === value : opt.label === value
+      );
+      if (option) nextValues[key] = option.value;
+    });
+    setValues(nextValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedValuesKey, contentType]);
 
   // 计算下拉框位置
   const calculateDropdownPosition = (categoryKey: string) => {

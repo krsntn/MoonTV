@@ -9,7 +9,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { checkForUpdates, CURRENT_VERSION, UpdateStatus } from '@/lib/version';
 
 import { useSite } from '@/components/SiteProvider';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 // 版本显示组件
 function VersionDisplay() {
@@ -33,9 +32,7 @@ function VersionDisplay() {
 
   return (
     <button
-      onClick={() =>
-        window.open('https://github.com/Stardm0/MoonTV', '_blank')
-      }
+      onClick={() => window.open('https://github.com/Stardm0/MoonTV', '_blank')}
       className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 transition-colors cursor-pointer'
     >
       <span className='font-mono'>v{CURRENT_VERSION}</span>
@@ -151,9 +148,6 @@ function LoginPageClient() {
 
   return (
     <div className='relative min-h-screen flex items-center justify-center px-4 overflow-hidden'>
-      <div className='absolute top-4 right-4'>
-        <ThemeToggle />
-      </div>
       <div className='relative z-10 w-full max-w-md rounded-3xl bg-gradient-to-b from-white/90 via-white/70 to-white/40 dark:from-zinc-900/90 dark:via-zinc-900/70 dark:to-zinc-900/40 backdrop-blur-xl shadow-2xl p-10 dark:border dark:border-zinc-800'>
         <h1 className='text-green-600 tracking-tight text-center text-3xl font-extrabold mb-8 bg-clip-text drop-shadow-sm'>
           {siteName}

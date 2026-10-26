@@ -10,7 +10,6 @@ import { getConfig } from '@/lib/config';
 
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SiteProvider } from '../components/SiteProvider';
-import { ThemeProvider } from '../components/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,6 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   viewportFit: 'cover',
+  // 网站只提供深色模式
+  themeColor: '#0c111c',
+  colorScheme: 'dark',
 };
 
 export default async function RootLayout({
@@ -76,13 +78,13 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang='zh-CN' suppressHydrationWarning>
+    <html lang='zh-CN' className='dark' suppressHydrationWarning>
       <head>
         <meta
           name='viewport'
           content='width=device-width, initial-scale=1.0, viewport-fit=cover'
         />
-        <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
+        <link rel='apple-touch-icon' href='/icons/apple-touch-icon.png' />
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
@@ -94,17 +96,10 @@ export default async function RootLayout({
       <body
         className={`${inter.className} min-h-screen bg-white text-gray-900 dark:bg-black dark:text-gray-200`}
       >
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SiteProvider siteName={siteName} announcement={announcement}>
-            {children}
-            <GlobalErrorIndicator />
-          </SiteProvider>
-        </ThemeProvider>
+        <SiteProvider siteName={siteName} announcement={announcement}>
+          {children}
+          <GlobalErrorIndicator />
+        </SiteProvider>
       </body>
     </html>
   );

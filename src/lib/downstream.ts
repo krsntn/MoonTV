@@ -1,6 +1,8 @@
+import he from 'he';
+
 import { API_CONFIG, ApiSite, getConfig } from '@/lib/config';
+import { recordSourceFailure, recordSourceSuccess } from '@/lib/source-health';
 import { SearchResult } from '@/lib/types';
-import { cleanHtmlTags } from '@/lib/utils';
 
 interface ApiSearchItem {
   vod_id: string;
@@ -23,7 +25,8 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeout = 500
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    // 不使用 Next.js 的 Data Cache：Node 运行时默认会把结果缓存到磁盘且不过期
+    return await fetch(url, { ...options, cache: 'no-store', signal: controller.signal });
   } finally {
     clearTimeout(timeoutId);
   }
@@ -102,10 +105,17 @@ export async function* searchFromApiStream(
   try {
     const apiUrl = apiSite.api + API_CONFIG.search.path + encodeURIComponent(query);
 
-    const response = await fetchWithTimeout(apiUrl, { headers: API_CONFIG.search.headers }, 30000);
-    if (!response.ok) return;
-
-    const data = await response.json();
+    // 第一页的结果决定 Source 的健康状态：网络错误、超时、HTTP 错误和无效 JSON 记为失败
+    let data: { list?: unknown; pagecount?: number };
+    try {
+      const response = await fetchWithTimeout(apiUrl, { headers: API_CONFIG.search.headers }, 30000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      data = await response.json();
+      recordSourceSuccess(apiSite.key);
+    } catch {
+      recordSourceFailure(apiSite.key);
+      return;
+    }
     if (!Array.isArray(data?.list)) return;
 
     // 第一页
@@ -266,4 +276,18 @@ async function handleSpecialSourceDetail(id: string, apiSite: ApiSite): Promise<
     type_name: '',
     douban_id: 0,
   };
+}
+
+function cleanHtmlTags(text: string): string {
+  if (!text) return '';
+
+  const cleanedText = text
+    .replace(/<[^>]+>/g, '\n') // 将 HTML 标签替换为换行
+    .replace(/\n+/g, '\n') // 将多个连续换行合并为一个
+    .replace(/[ \t]+/g, ' ') // 将多个连续空格和制表符合并为一个空格，但保留换行符
+    .replace(/^\n+|\n+$/g, '') // 去掉首尾换行
+    .trim(); // 去掉首尾空格
+
+  // 使用 he 库解码 HTML 实体
+  return he.decode(cleanedText);
 }

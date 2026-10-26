@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any,no-console */
 import { getCacheTime, getConfig } from '@/lib/config';
 import { searchFromApiStream } from '@/lib/downstream';
+import { filterAvailableSources } from '@/lib/source-health';
 import { yellowWords } from '@/lib/yellow';
 
-export const runtime = 'edge';
+// Node 运行时：Source 健康状态在同一进程内共享
+export const dynamic = 'force-dynamic';
+// 所有 fetch 都不进入 Next.js 的 Data Cache（包括存储层的请求）
+export const fetchCache = 'force-no-store';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,7 +16,15 @@ export async function GET(request: Request) {
   const enableStream = streamParam !== '0'; // 默认开启流式
 
   const config = await getConfig();
-  const apiSites = config.SourceConfig.filter((site) => !site.disabled);
+  // 跳过连续失败、正在冷却的 Source
+  const { available: apiSites, skipped: skippedSites } = filterAvailableSources(
+    config.SourceConfig.filter((site) => !site.disabled)
+  );
+  const skippedSources = skippedSites.map((site) => ({
+    name: site.name,
+    key: site.key,
+    error: '连续失败，暂时跳过',
+  }));
 
   const encoder = new TextEncoder();
   const { readable, writable } = new TransformStream();
@@ -92,7 +104,10 @@ export async function GET(request: Request) {
 
     const results = await Promise.all(tasks);
     const aggregatedResults = results.flatMap((r) => r.siteResults);
-    const failedSources = results.filter((r) => r.failed).map((r) => r.failed);
+    const failedSources = [
+      ...skippedSources,
+      ...results.filter((r) => r.failed).map((r) => r.failed),
+    ];
 
     if (aggregatedResults.length === 0) {
       return new Response(JSON.stringify({ aggregatedResults, failedSources }), {
@@ -119,7 +134,9 @@ export async function GET(request: Request) {
   // -------------------------
   (async () => {
     const aggregatedResults: any[] = [];
-    const failedSources: { name: string; key: string; error: string }[] = [];
+    const failedSources: { name: string; key: string; error: string }[] = [
+      ...skippedSources,
+    ];
 
     const tasks = apiSites.map(async (site) => {
       try {
