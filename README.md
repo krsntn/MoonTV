@@ -4,7 +4,7 @@
   <img src="public/logo.png" alt="LibreTV Logo" width="120">
 </div>
 
-> 🎬 **MoonTV** 是一个开箱即用的、跨平台的影视聚合播放器。它基于 **Next.js 14** + **Tailwind&nbsp;CSS** + **TypeScript** 构建，支持多资源搜索、在线播放、收藏同步、播放记录、本地/云端存储，让你可以随时随地畅享海量免费影视内容。
+> 🎬 **MoonTV** is a ready-to-use, cross-platform video aggregation player. It is built with **Next.js 14** + **Tailwind&nbsp;CSS** + **TypeScript**. It supports search across many sources, online playback, synced favorites, watch history, and local or cloud storage, so you can watch a large library of free videos anywhere.
 
 <div align="center">
 
@@ -18,165 +18,164 @@
 
 ---
 
-## ✨ 功能特性
+## ✨ Features
 
-- 🔍 **多源聚合搜索**：增加流式搜索快速返回结果。
-- 📄 **丰富详情页**：支持剧集列表、演员、年份、简介等完整信息展示。
-- ▶️ **流畅在线播放**：集成 HLS.js & ArtPlayer。
-- ❤️ **收藏 + 继续观看**：支持 Redis/Upstash 存储，多端同步进度。
-- 📱 **PWA**：离线缓存、安装到桌面/主屏，移动端原生体验。
-- 🌗 **响应式布局**：桌面侧边栏 + 移动底部导航，自适应各种屏幕尺寸。
-- 🚀 **极简部署**：一条 Docker 命令即可将完整服务跑起来，或免费部署到 Vercel、Netlify。
-- 👿 **智能去广告**：自动跳过视频中的切片广告（实验性）
+- 🔍 **Multi-source search**: streaming search returns results quickly.
+- 📄 **Rich detail pages**: episode list, cast, year, synopsis, and more.
+- ▶️ **Smooth online playback**: built on HLS.js and ArtPlayer.
+- ❤️ **Favorites and Continue Watching**: Redis/Upstash storage syncs progress across devices.
+- 📱 **PWA**: offline cache and install to desktop or home screen for a native feel on mobile.
+- 🌗 **Responsive layout**: sidebar on desktop, bottom navigation on mobile, fits any screen size.
+- 🚀 **Simple deployment**: run the full service with one Docker command, or deploy to Vercel or Netlify for free.
+- 👿 **Smart ad removal**: automatically skips ad segments in videos (experimental).
 
 <details>
-  <summary>点击查看项目截图</summary>
-  <img src="public/screenshot1.png" alt="项目截图" style="max-width:600px">
-  <img src="public/screenshot2.png" alt="项目截图" style="max-width:600px">
-  <img src="public/screenshot3.png" alt="项目截图" style="max-width:600px">
+  <summary>Click to view screenshots</summary>
+  <img src="public/screenshot1.png" alt="Screenshot" style="max-width:600px">
+  <img src="public/screenshot2.png" alt="Screenshot" style="max-width:600px">
+  <img src="public/screenshot3.png" alt="Screenshot" style="max-width:600px">
 </details>
 
-## 🗺 目录
+## 🗺 Contents
 
 - [MoonTV(Branch)](#moontvbranch)
-  - [✨ 功能特性](#-功能特性)
-  - [🗺 目录](#-目录)
-  - [技术栈](#技术栈)
-  - [部署](#部署)
-    - [Vercel 部署](#vercel-部署)
-      - [普通部署（localstorage）](#普通部署localstorage)
-      - [Upstash Redis 支持](#upstash-redis-支持)
-    - [Netlify 部署](#netlify-部署)
-      - [普通部署（localstorage）](#普通部署localstorage-1)
-      - [Upstash Redis 支持](#upstash-redis-支持-1)
-    - [Docker 部署](#docker-部署)
-  - [环境变量](#环境变量)
-  - [配置说明](#配置说明)
-  - [管理员配置](#管理员配置)
-  - [AndroidTV 使用](#androidtv-使用)
+  - [✨ Features](#-features)
+  - [🗺 Contents](#-contents)
+  - [Tech Stack](#tech-stack)
+  - [Deployment](#deployment)
+    - [Vercel Deployment](#vercel-deployment)
+      - [Standard Deployment (localstorage)](#standard-deployment-localstorage)
+      - [Upstash Redis Support](#upstash-redis-support)
+    - [Netlify Deployment](#netlify-deployment)
+      - [Standard Deployment (localstorage)](#standard-deployment-localstorage-1)
+      - [Upstash Redis Support](#upstash-redis-support-1)
+    - [Docker Deployment](#docker-deployment)
+  - [Environment Variables](#environment-variables)
+  - [Configuration](#configuration)
+  - [Admin Configuration](#admin-configuration)
+  - [Android TV](#android-tv)
   - [Roadmap](#roadmap)
-  - [安全与隐私提醒](#安全与隐私提醒)
-    - [请设置密码保护并关闭公网注册](#请设置密码保护并关闭公网注册)
-    - [部署要求](#部署要求)
-    - [重要声明](#重要声明)
+  - [Security and Privacy](#security-and-privacy)
+    - [Set a Password and Disable Public Registration](#set-a-password-and-disable-public-registration)
+    - [Deployment Requirements](#deployment-requirements)
+    - [Disclaimer](#disclaimer)
   - [License](#license)
-  - [致谢](#致谢)
+  - [Acknowledgements](#acknowledgements)
 
-## 技术栈
+## Tech Stack
 
-| 分类      | 主要依赖                                                                                              |
-| --------- | ----------------------------------------------------------------------------------------------------- |
-| 前端框架  | [Next.js 14](https://nextjs.org/) · App Router                                                        |
-| UI & 样式 | [Tailwind&nbsp;CSS 3](https://tailwindcss.com/)                                                       |
-| 语言      | TypeScript 4                                                                                          |
-| 播放器    | [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) · [HLS.js](https://github.com/video-dev/hls.js/) |
-| 代码质量  | ESLint · Prettier · Jest                                                                              |
-| 部署      | Docker · Vercel ·  pages                                                                    |
+| Category       | Main dependencies                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| Framework      | [Next.js 14](https://nextjs.org/) · App Router                                                        |
+| UI and styling | [Tailwind&nbsp;CSS 3](https://tailwindcss.com/)                                                       |
+| Language       | TypeScript 4                                                                                          |
+| Player         | [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) · [HLS.js](https://github.com/video-dev/hls.js/) |
+| Code quality   | ESLint · Prettier · Jest                                                                              |
+| Deployment     | Docker · Vercel · pages                                                                               |
 
-## 部署
+## Deployment
 
-本项目**支持 Vercel、Docker、Netlify** 部署。
+This project **supports Vercel, Docker, and Netlify** deployments.
 
-存储支持矩阵
+Storage support matrix
 
-|                   | Docker | Vercel | Netlify |
-| :---------------: | :----: | :----: | :-----: |
-|    原生 redis     |   ✅   |        |         |
-|   Upstash Redis   |   ☑️   |   ✅   |   ✅    |
+|               | Docker | Vercel | Netlify |
+| :-----------: | :----: | :----: | :-----: |
+| Native Redis  |   ✅   |        |         |
+| Upstash Redis |   ☑️   |   ✅   |   ✅    |
 
-✅：经测试支持
+✅: tested and supported
 
-☑️：理论上支持，未测试
+☑️: supported in theory, not tested
 
-### Vercel 部署
+### Vercel Deployment
 
-#### 普通部署（localstorage）
+#### Standard Deployment (localstorage)
 
-1. **Fork** 本仓库到你的 GitHub 账户。
-2. 登陆 [Vercel](https://vercel.com/)，点击 **Add New → Project**，选择 Fork 后的仓库。
-3. 设置 PASSWORD 环境变量。
-4. 保持默认设置完成首次部署。
-5. 如需自定义 `config.json`，请直接修改 Fork 后仓库中该文件。
-6. 每次 Push 到 `main` 分支将自动触发重新构建。
+1. **Fork** this repository to your GitHub account.
+2. Log in to [Vercel](https://vercel.com/), click **Add New → Project**, and select your fork.
+3. Set the `PASSWORD` environment variable.
+4. Keep the default settings and finish the first deployment.
+5. To customize `config.json`, edit that file in your fork directly.
+6. Every push to the `main` branch triggers a new build automatically.
 
-部署完成后即可通过分配的域名访问，也可以绑定自定义域名。
+When the deployment finishes, open the assigned domain. You can also add a custom domain.
 
-#### Upstash Redis 支持
+#### Upstash Redis Support
 
-0. 完成普通部署并成功访问。
-1. 在 [upstash](https://upstash.com/) 注册账号并新建一个 Redis 实例，名称任意。
-2. 复制新数据库的 **HTTPS ENDPOINT 和 TOKEN**
-3. 返回你的 Vercel 项目，新增环境变量 **UPSTASH_URL 和 UPSTASH_TOKEN**，值为第二步复制的 endpoint 和 token
-4. 设置环境变量 NEXT_PUBLIC_STORAGE_TYPE，值为 **upstash**；设置 USERNAME 和 PASSWORD 作为站长账号
-5. 重试部署
+0. Finish the standard deployment and confirm that the site opens.
+1. Sign up at [Upstash](https://upstash.com/) and create a Redis database with any name.
+2. Copy the **HTTPS ENDPOINT and TOKEN** of the new database.
+3. Go back to your Vercel project and add the environment variables **UPSTASH_URL and UPSTASH_TOKEN** with the endpoint and token from step 2.
+4. Set the environment variable `NEXT_PUBLIC_STORAGE_TYPE` to **upstash**. Set `USERNAME` and `PASSWORD` for the site owner account.
+5. Redeploy.
 
-### Netlify 部署
+### Netlify Deployment
 
-#### 普通部署（localstorage）
+#### Standard Deployment (localstorage)
 
-1. **Fork** 本仓库到你的 GitHub 账户。
-2. 登陆 [Netlify](https://www.netlify.com/)，点击 **Add New project → Importing an existing project**，授权 Github，选择 Fork 后的仓库。
-3. 设置 PASSWORD 环境变量。
-4. 保持默认设置完成首次部署。
-5. 每次 Push 到 `main` 分支将自动触发重新构建。
+1. **Fork** this repository to your GitHub account.
+2. Log in to [Netlify](https://www.netlify.com/), click **Add New project → Importing an existing project**, authorize GitHub, and select your fork.
+3. Set the `PASSWORD` environment variable.
+4. Keep the default settings and finish the first deployment.
+5. Every push to the `main` branch triggers a new build automatically.
 
-部署完成后即可通过分配的域名访问，也可以绑定自定义域名。
+When the deployment finishes, open the assigned domain. You can also add a custom domain.
 
-#### Upstash Redis 支持
+#### Upstash Redis Support
 
-0. 完成普通部署并成功访问。
-1. 在 [upstash](https://upstash.com/) 注册账号并新建一个 Redis 实例，名称任意。
-2. 复制新数据库的 **HTTPS ENDPOINT 和 TOKEN**
-3. 返回你的 Netlify 项目，**Project Configuration → Environment variables** 新增环境变量 **UPSTASH_URL 和 UPSTASH_TOKEN**，值为第二步复制的 endpoint 和 token
-4. 设置环境变量 NEXT_PUBLIC_STORAGE_TYPE，值为 **upstash**；设置 USERNAME 和 PASSWORD 作为站长账号
-5. 重试部署
+0. Finish the standard deployment and confirm that the site opens.
+1. Sign up at [Upstash](https://upstash.com/) and create a Redis database with any name.
+2. Copy the **HTTPS ENDPOINT and TOKEN** of the new database.
+3. Go back to your Netlify project, open **Project Configuration → Environment variables**, and add **UPSTASH_URL and UPSTASH_TOKEN** with the endpoint and token from step 2.
+4. Set the environment variable `NEXT_PUBLIC_STORAGE_TYPE` to **upstash**. Set `USERNAME` and `PASSWORD` for the site owner account.
+5. Redeploy.
 
-### Docker 部署
+### Docker Deployment
 
 https://github.com/MoonTechLab/LunaTV
 
-## 环境变量
+## Environment Variables
 
-| 变量                                | 说明                                         | 可选值                           | 默认值                                                                                                                     |
-| ----------------------------------- | -------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| USERNAME                            | 非 localstorage 部署时的管理员账号           | 任意字符串                       | （空）                                                                                                                     |
-| PASSWORD                            | 非 localstorage 部署时为管理员密码           | 任意字符串                       | （空）                                                                                                                     |
-| NEXT_PUBLIC_SITE_NAME               | 站点名称                                     | 任意字符串                       | MoonTV                                                                                                                     |
-| ANNOUNCEMENT                        | 站点公告                                     | 任意字符串                       | 本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。 |
-| NEXT_PUBLIC_STORAGE_TYPE            | 播放记录/收藏的存储方式                      | localstorage、redis、d1、upstash | localstorage                                                                                                               |
-| REDIS_URL                           | redis 连接 url                               | 连接 url                         | 空                                                                                                                         |
-| UPSTASH_URL                         | upstash redis 连接 url                       | 连接 url                         | 空                                                                                                                         |
-| UPSTASH_TOKEN                       | upstash redis 连接 token                     | 连接 token                       | 空                                                                                                                         |
-| NEXT_PUBLIC_ENABLE_REGISTER         | 是否开放注册，仅在非 localstorage 部署时生效 | true / false                     | false                                                                                                                      |
-| NEXT_PUBLIC_SEARCH_MAX_PAGE         | 搜索接口可拉取的最大页数                     | 1-50                             | 5                                                                                                                          |
-| NEXT_PUBLIC_DOUBAN_PROXY_TYPE       | 豆瓣数据源请求方式                           | 见下方                           |                                                                                               direct                      |
-| NEXT_PUBLIC_DOUBAN_PROXY            | 自定义豆瓣数据代理 URL                       | url prefix                       | (空)                                                                                                                       |
-| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE | 豆瓣图片代理类型                             | 见下方                           | direct                                                                                                                     |
-| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY      | 自定义豆瓣图片代理 URL                       | url prefix                       | (空)                                                                                                                       |
-| NEXT_PUBLIC_DISABLE_YELLOW_FILTER   | 关闭色情内容过滤                             | true/false                       | false                                                                                                                      |
+| Variable                            | Description                                                            | Allowed values                   | Default                                                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| USERNAME                            | Admin account for deployments that do not use localstorage             | Any string                       | (empty)                                                                                                                          |
+| PASSWORD                            | Admin password for deployments that do not use localstorage            | Any string                       | (empty)                                                                                                                          |
+| NEXT_PUBLIC_SITE_NAME               | Site name                                                              | Any string                       | MoonTV                                                                                                                           |
+| ANNOUNCEMENT                        | Site announcement                                                      | Any string                       | A disclaimer (in Chinese): the site only provides video search, stores no videos, and is not responsible for third-party content |
+| NEXT_PUBLIC_STORAGE_TYPE            | Storage for watch history and favorites                                | localstorage, redis, d1, upstash | localstorage                                                                                                                     |
+| REDIS_URL                           | Redis connection URL                                                   | Connection URL                   | (empty)                                                                                                                          |
+| UPSTASH_URL                         | Upstash Redis connection URL                                           | Connection URL                   | (empty)                                                                                                                          |
+| UPSTASH_TOKEN                       | Upstash Redis connection token                                         | Connection token                 | (empty)                                                                                                                          |
+| NEXT_PUBLIC_ENABLE_REGISTER         | Allow registration (only for deployments that do not use localstorage) | true / false                     | false                                                                                                                            |
+| NEXT_PUBLIC_SEARCH_MAX_PAGE         | Maximum number of pages the search API fetches                         | 1-50                             | 5                                                                                                                                |
+| NEXT_PUBLIC_DOUBAN_PROXY_TYPE       | How Douban data is requested                                           | See below                        | direct                                                                                                                           |
+| NEXT_PUBLIC_DOUBAN_PROXY            | Custom Douban data proxy URL                                           | URL prefix                       | (empty)                                                                                                                          |
+| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE | Douban image proxy type                                                | See below                        | direct                                                                                                                           |
+| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY      | Custom Douban image proxy URL                                          | URL prefix                       | (empty)                                                                                                                          |
+| NEXT_PUBLIC_DISABLE_YELLOW_FILTER   | Turn off the adult content filter                                      | true / false                     | false                                                                                                                            |
 
-NEXT_PUBLIC_DOUBAN_PROXY_TYPE 选项解释：
+`NEXT_PUBLIC_DOUBAN_PROXY_TYPE` options:
 
-- direct: 由服务器直接请求豆瓣源站
-- cors-proxy-zwei: 浏览器向 cors proxy 请求豆瓣数据，该 cors proxy 由 [Zwei](https://github.com/bestzwei) 搭建
-- cmliussss-cdn-tencent: 浏览器向豆瓣 CDN 请求数据，该 CDN 由 [CMLiussss](https://github.com/cmliu) 搭建，并由腾讯云 cdn 提供加速
-- cmliussss-cdn-ali: 浏览器向豆瓣 CDN 请求数据，该 CDN 由 [CMLiussss](https://github.com/cmliu) 搭建，并由阿里云 cdn 提供加速
+- direct: the server requests Douban directly.
+- cors-proxy-zwei: the browser requests Douban data through a CORS proxy run by [Zwei](https://github.com/bestzwei).
+- cmliussss-cdn-tencent: the browser requests data from a Douban CDN run by [CMLiussss](https://github.com/cmliu), accelerated by Tencent Cloud CDN.
+- cmliussss-cdn-ali: the browser requests data from a Douban CDN run by [CMLiussss](https://github.com/cmliu), accelerated by Alibaba Cloud CDN.
+- custom: a custom proxy, set with `NEXT_PUBLIC_DOUBAN_PROXY`.
 
-- custom: 用户自定义 proxy，由 NEXT_PUBLIC_DOUBAN_PROXY 定义
+`NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE` options:
 
-NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE 选项解释：
+- direct: the browser requests the default Douban image domain directly.
+- server: the server proxies requests to the default Douban image domain.
+- img3: the browser requests Douban's official premium CDN (Alibaba Cloud).
+- cmliussss-cdn-tencent: the browser requests a Douban CDN run by [CMLiussss](https://github.com/cmliu), accelerated by Tencent Cloud CDN.
+- cmliussss-cdn-ali: the browser requests a Douban CDN run by [CMLiussss](https://github.com/cmliu), accelerated by Alibaba Cloud CDN.
+- custom: a custom proxy, set with `NEXT_PUBLIC_DOUBAN_IMAGE_PROXY`.
 
-- direct：由浏览器直接请求豆瓣分配的默认图片域名
-- server：由服务器代理请求豆瓣分配的默认图片域名
-- img3：由浏览器请求豆瓣官方的精品 cdn（阿里云）
-- cmliussss-cdn-tencent：由浏览器请求豆瓣 CDN，该 CDN 由 [CMLiussss](https://github.com/cmliu) 搭建，并由腾讯云 cdn 提供加速
-- cmliussss-cdn-ali：由浏览器请求豆瓣 CDN，该 CDN 由 [CMLiussss](https://github.com/cmliu) 搭建，并由阿里云 cdn 提供加速
-- custom: 用户自定义 proxy，由 NEXT_PUBLIC_DOUBAN_IMAGE_PROXY 定义
+## Configuration
 
-## 配置说明
-
-如果为localstorage模式所有可自定义项集中在根目录的 `config.json` 中(localstorage模式)
-非localstorage可在部署好的网页中直接配置
+In localstorage mode, all custom settings are in `config.json` in the project root.
+In other storage modes, you can change the settings in the admin page of the deployed site.
 
 ```json
 {
@@ -184,14 +183,14 @@ NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE 选项解释：
   "api_site": {
     "dyttzy": {
       "api": "http://caiji.dyttzyapi.com/api.php/provide/vod",
-      "name": "电影天堂资源",
+      "name": "DYTT Resources",
       "detail": "http://caiji.dyttzyapi.com"
     }
-    // ...更多站点
+    // ...more sites
   },
   "custom_category": [
     {
-      "name": "华语",
+      "name": "Chinese-language",
       "type": "movie",
       "query": "华语"
     }
@@ -199,89 +198,122 @@ NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE 选项解释：
 }
 ```
 
-- `cache_time`：接口缓存时间（秒）。
-- `api_site`：你可以增删或替换任何资源站，字段说明：
-  - `key`：唯一标识，保持小写字母/数字。
-  - `api`：资源站提供的 `vod` JSON API 根地址。
-  - `name`：在人机界面中展示的名称。
-  - `detail`：（可选）部分无法通过 API 获取剧集详情的站点，需要提供网页详情根 URL，用于爬取。
-- `custom_category`：自定义分类配置，用于在导航中添加个性化的影视分类。以 type + query 作为唯一标识。支持以下字段：
-  - `name`：分类显示名称（可选，如不提供则使用 query 作为显示名）
-  - `type`：分类类型，支持 `movie`（电影）或 `tv`（电视剧）
-  - `query`：搜索关键词，用于在豆瓣 API 中搜索相关内容
+- `cache_time`: API cache time in seconds.
+- `api_site`: add, remove, or replace any video source site. Fields:
+  - `key`: unique ID. Use lowercase letters and digits only.
+  - `api`: root URL of the site's `vod` JSON API.
+  - `name`: display name in the user interface.
+  - `detail`: (optional) root URL of the site's web detail pages. Some sites do not return episode details through the API, so the app scrapes these pages instead.
+- `custom_category`: custom categories that add your own video categories to the navigation. The pair `type` + `query` is the unique ID. Fields:
+  - `name`: display name of the category (optional; if you omit it, the app shows `query`)
+  - `type`: category type, `movie` or `tv`
+  - `query`: search keyword for the Douban API
 
-custom_category 支持的自定义分类已知如下：
+The `query` value must be the Douban tag in Chinese, exactly as listed below.
 
-- movie：热门、最新、经典、豆瓣高分、冷门佳片、华语、欧美、韩国、日本、动作、喜剧、爱情、科幻、悬疑、恐怖、治愈
-- tv：热门、美剧、英剧、韩剧、日剧、国产剧、港剧、日本动画、综艺、纪录片
+Known tags for `type: "movie"`:
 
-也可输入如 "哈利波特" 效果等同于豆瓣搜索
+| Category            | `query`      |
+| ------------------- | ------------ |
+| Hot                 | `"热门"`     |
+| Latest              | `"最新"`     |
+| Classics            | `"经典"`     |
+| Top rated on Douban | `"豆瓣高分"` |
+| Hidden gems         | `"冷门佳片"` |
+| Chinese-language    | `"华语"`     |
+| Western             | `"欧美"`     |
+| Korean              | `"韩国"`     |
+| Japanese            | `"日本"`     |
+| Action              | `"动作"`     |
+| Comedy              | `"喜剧"`     |
+| Romance             | `"爱情"`     |
+| Science fiction     | `"科幻"`     |
+| Mystery             | `"悬疑"`     |
+| Horror              | `"恐怖"`     |
+| Feel-good           | `"治愈"`     |
 
-MoonTV 支持标准的苹果 CMS V10 API 格式。
+Known tags for `type: "tv"`:
 
-修改后 **无需重新构建**，服务会在启动时读取一次。
+| Category           | `query`      |
+| ------------------ | ------------ |
+| Hot                | `"热门"`     |
+| US series          | `"美剧"`     |
+| UK series          | `"英剧"`     |
+| Korean series      | `"韩剧"`     |
+| Japanese series    | `"日剧"`     |
+| Chinese series     | `"国产剧"`   |
+| Hong Kong series   | `"港剧"`     |
+| Japanese animation | `"日本动画"` |
+| Variety shows      | `"综艺"`     |
+| Documentaries      | `"纪录片"`   |
 
-## 管理员配置
+You can also enter any other keyword, such as a Chinese title (for example, `哈利波特` for Harry Potter). It works like a Douban search.
 
-**该特性目前仅支持通过非 localstorage 存储的部署方式使用**
+MoonTV supports the standard Apple CMS V10 API format.
 
-支持在运行时动态变更服务配置
+After a change, **you do not need to rebuild**. The service reads the file once at startup.
 
-设置环境变量 USERNAME 和 PASSWORD 即为站长用户，站长可设置用户为管理员
+## Admin Configuration
 
-站长或管理员访问 `/admin` 即可进行管理员配置
+**This feature only works for deployments that do not use localstorage.**
 
-## AndroidTV 使用
+You can change the service configuration at runtime.
 
-目前该项目可以配合 [OrionTV](https://github.com/zimplexing/OrionTV) 在 Android TV 上使用，可以直接作为 OrionTV 后端
+The `USERNAME` and `PASSWORD` environment variables define the site owner. The site owner can make other users admins.
 
-暂时收藏夹与播放记录和网页端隔离，后续会支持同步用户数据
+The site owner or an admin opens `/admin` to change the configuration.
+
+## Android TV
+
+You can use this project on Android TV with [OrionTV](https://github.com/zimplexing/OrionTV). It works directly as the OrionTV backend.
+
+For now, favorites and watch history on OrionTV are separate from the web app. Syncing user data is planned.
 
 ## Roadmap
 
-- [x] 深色模式
-- [x] 持久化存储
-- [x] 多账户
+- [x] Dark mode
+- [x] Persistent storage
+- [x] Multiple accounts
 
-## 安全与隐私提醒
+## Security and Privacy
 
-### 请设置密码保护并关闭公网注册
+### Set a Password and Disable Public Registration
 
-为了您的安全和避免潜在的法律风险，我们要求在部署时设置密码保护并**强烈建议关闭公网注册**：
+For your safety, and to avoid possible legal risks, you must set a password when you deploy, and we **strongly recommend that you disable public registration**:
 
-- **避免公开访问**：不设置密码的实例任何人都可以访问，可能被恶意利用
-- **防范版权风险**：公开的视频搜索服务可能面临版权方的投诉举报
-- **保护个人隐私**：设置密码可以限制访问范围，保护您的使用记录
+- **Prevent public access**: anyone can open an instance without a password, and it can be misused.
+- **Reduce copyright risk**: a public video search service can get copyright complaints.
+- **Protect your privacy**: a password limits who can access the site and protects your watch history.
 
-### 部署要求
+### Deployment Requirements
 
-1. **设置环境变量 `PASSWORD`**：为您的实例设置一个强密码
-2. **仅供个人使用**：请勿将您的实例链接公开分享或传播
-3. **遵守当地法律**：请确保您的使用行为符合当地法律法规
+1. **Set the `PASSWORD` environment variable**: use a strong password for your instance.
+2. **Personal use only**: do not share or publish the link to your instance.
+3. **Follow local laws**: make sure your use complies with the laws where you live.
 
-### 重要声明
+### Disclaimer
 
-- 本项目仅供学习和个人使用
-- 请勿将部署的实例用于商业用途或公开服务
-- 如因公开分享导致的任何法律问题，用户需自行承担责任
-- 项目开发者不对用户的使用行为承担任何法律责任
+- This project is for learning and personal use only.
+- Do not use a deployed instance for commercial purposes or as a public service.
+- Users are responsible for any legal issues caused by sharing their instance publicly.
+- The project developers are not legally responsible for how users use the project.
 
 ## License
 
 [MIT](LICENSE) © 2025 MoonTV & Contributors
 
-## 致谢
+## Acknowledgements
 
-- [ts-nextjs-tailwind-starter](https://github.com/theodorusclarence/ts-nextjs-tailwind-starter) — 项目最初基于该脚手架。
-- [LibreTV](https://github.com/LibreSpark/LibreTV) — 由此启发，站在巨人的肩膀上。
-- [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) — 提供强大的网页视频播放器。
-- [HLS.js](https://github.com/video-dev/hls.js) — 实现 HLS 流媒体在浏览器中的播放支持。
-- [Zwei](https://github.com/bestzwei) — 提供获取豆瓣数据的 cors proxy
-- [CMLiussss](https://github.com/cmliu) — 提供豆瓣 CDN 服务
-- 感谢所有提供免费影视接口的站点。
+- [ts-nextjs-tailwind-starter](https://github.com/theodorusclarence/ts-nextjs-tailwind-starter) — the project started from this template.
+- [LibreTV](https://github.com/LibreSpark/LibreTV) — the inspiration for this project; we stand on the shoulders of giants.
+- [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) — a powerful web video player.
+- [HLS.js](https://github.com/video-dev/hls.js) — HLS streaming playback in the browser.
+- [Zwei](https://github.com/bestzwei) — the CORS proxy for Douban data.
+- [CMLiussss](https://github.com/cmliu) — the Douban CDN service.
+- Thanks to all sites that provide free video APIs.
 
 ---
 
-<!-- ## Star 趋势
+<!-- ## Star History
 
 [![Stargazers over time](https://starchart.cc/LunaTechLab/MoonTV.svg?variant=adaptive)](https://starchart.cc/LunaTechLab/MoonTV) -->
