@@ -21,6 +21,7 @@ import {
   saveSkipConfig,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { isTitleMatch, pickPreferredVersion } from '@/lib/title-match';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
@@ -750,11 +751,11 @@ function PlayPageClient() {
                   if (data.pageResults) {
                     const filteredResults: SearchResult[] =
                       data.pageResults.filter((r: SearchResult) => {
-                        const titleMatch =
-                          r.title.replaceAll(' ', '').toLowerCase() ===
+                        // 忽略“国语”“粤语版”等语言后缀
+                        const titleMatch = isTitleMatch(
+                          r.title,
                           videoTitleRef.current
-                            .replaceAll(' ', '')
-                            .toLowerCase();
+                        );
                         const yearMatch = videoYearRef.current
                           ? r.year.toLowerCase() ===
                             videoYearRef.current.toLowerCase()
@@ -909,9 +910,9 @@ function PlayPageClient() {
               ) || null;
           }
 
-          // 如果没找到，就退回到第一个源
+          // 如果没找到，就优先选择粤语版本，没有则退回到第一个源
           if (!detailData) {
-            detailData = newResults[0];
+            detailData = pickPreferredVersion(newResults) || newResults[0];
           }
 
           setCurrentSource(detailData.source);
@@ -938,6 +939,13 @@ function PlayPageClient() {
           setLoadingStage('ready');
           setLoadingMessage('✨ 准备就绪，即将开始播放...');
           // 第一个匹配结果到达后立即创建播放器
+          setLoading(false);
+        }
+      }).then((results) => {
+        // 搜索结束仍没有匹配结果时立即提示，不必等到 80 秒超时
+        if (!started && results.length === 0) {
+          if (timeoutId) clearTimeout(timeoutId);
+          setError('未找到匹配结果');
           setLoading(false);
         }
       });
