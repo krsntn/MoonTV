@@ -8,6 +8,7 @@ import { Heart } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
+import { getAirPlayUrl, peekAirPlayUrl } from '@/lib/airplay.client';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -21,10 +22,12 @@ import {
   saveSkipConfig,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { removeAdBlocks } from '@/lib/m3u8';
 import { isTitleMatch, pickPreferredVersion } from '@/lib/title-match';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
+import AirPlayButton from '@/components/AirPlayButton';
 import EpisodeSelector from '@/components/EpisodeSelector';
 import PageLayout from '@/components/PageLayout';
 
@@ -181,6 +184,13 @@ function PlayPageClient() {
   const lastSaveTimeRef = useRef<number>(0);
 
   const artPlayerRef = useRef<any>(null);
+  // 当前播放器的 video 元素，供 AirPlay 按钮监听投屏状态
+  const [airplayVideo, setAirplayVideo] = useState<HTMLVideoElement | null>(
+    null
+  );
+  // 原地切换地址失败后改为重建播放器
+  const switchFailedRef = useRef(false);
+  const [playerRebuild, setPlayerRebuild] = useState(0);
   const artRef = useRef<HTMLDivElement | null>(null);
 
   // Wake Lock 相关
@@ -416,15 +426,22 @@ function PlayPageClient() {
     const airplaySources = Array.from(
       video.querySelectorAll<HTMLSourceElement>('source[data-airplay]')
     );
-    const existed = airplaySources.some((s) => s.getAttribute('src') === url);
+    const existed = airplaySources.some((s) => s.dataset.origin === url);
     if (!existed) {
       // 只移除旧的 AirPlay 备选源，保持唯一
       airplaySources.forEach((s) => s.remove());
       const sourceEl = document.createElement('source');
       sourceEl.type = 'application/x-mpegURL';
-      sourceEl.src = url;
+      // 开启去广告时，电视使用本站去除广告后的播放列表；链接取到之前先用原始地址
+      sourceEl.src = (blockAdEnabledRef.current && peekAirPlayUrl(url)) || url;
       sourceEl.dataset.airplay = 'true';
+      sourceEl.dataset.origin = url;
       video.appendChild(sourceEl);
+      if (blockAdEnabledRef.current && sourceEl.src === url) {
+        getAirPlayUrl(url).then((airplayUrl) => {
+          if (sourceEl.isConnected) sourceEl.src = airplayUrl;
+        });
+      }
     }
 
     // 始终允许远程播放（AirPlay / Cast）
@@ -483,25 +500,6 @@ function PlayPageClient() {
   };
 
   // 去广告相关函数
-  function filterAdsFromM3U8(m3u8Content: string): string {
-    if (!m3u8Content) return '';
-
-    // 按行分割M3U8内容
-    const lines = m3u8Content.split('\n');
-    const filteredLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // 只过滤#EXT-X-DISCONTINUITY标识
-      if (!line.includes('#EXT-X-DISCONTINUITY')) {
-        filteredLines.push(line);
-      }
-    }
-
-    return filteredLines.join('\n');
-  }
-
   // 跳过片头片尾配置相关函数（设置菜单暂时关闭，保留以便恢复）
   // eslint-disable-next-line unused-imports/no-unused-vars
   const handleSkipConfigChange = async (newConfig: {
@@ -623,8 +621,11 @@ function PlayPageClient() {
           ) {
             // 如果是m3u8文件，处理内容以移除广告分段
             if (response.data && typeof response.data === 'string') {
-              // 过滤掉广告段 - 实现更精确的广告过滤逻辑
-              response.data = filterAdsFromM3U8(response.data);
+              // 去除插入的广告片段（与 AirPlay 播放列表使用同一规则）
+              response.data = removeAdBlocks(
+                response.data,
+                response.url || context.url
+              );
             }
             return onSuccess(response, stats, context, null);
           };
@@ -638,6 +639,15 @@ function PlayPageClient() {
   // 当集数索引变化时自动更新视频地址
   useEffect(() => {
     updateVideoUrl(detail, currentEpisodeIndex);
+  }, [detail, currentEpisodeIndex]);
+
+  // 预先获取当前集和下一集的 AirPlay 播放列表链接，投屏中换集时可以直接使用
+  useEffect(() => {
+    if (!blockAdEnabledRef.current || !detail?.episodes) return;
+    [currentEpisodeIndex, currentEpisodeIndex + 1].forEach((index) => {
+      const url = detail.episodes[index];
+      if (url) getAirPlayUrl(url);
+    });
   }, [detail, currentEpisodeIndex]);
 
   // 进入页面时直接获取全部源信息
@@ -1464,8 +1474,28 @@ function PlayPageClient() {
     const isWebkit =
       typeof window !== 'undefined' && /AppleWebKit/.test(navigator.userAgent);
 
-    // 非WebKit浏览器且播放器已存在，使用switch方法切换
-    if (!isWebkit && artPlayerRef.current) {
+    // 播放器已存在时在同一个 video 元素上切换地址：AirPlay 投屏会延续到下一集。
+    // 切换后 20 秒内没有加载出视频，或者出错，就改为重建播放器
+    if (artPlayerRef.current && !switchFailedRef.current) {
+      const art = artPlayerRef.current;
+      const video = art.video as HTMLVideoElement;
+      const fallback = () => {
+        clearTimeout(timer);
+        video.removeEventListener('loadedmetadata', succeed);
+        video.removeEventListener('error', fallback);
+        console.warn('原地切换失败，重建播放器');
+        switchFailedRef.current = true;
+        setPlayerRebuild((count) => count + 1);
+      };
+      const succeed = () => {
+        clearTimeout(timer);
+        video.removeEventListener('loadedmetadata', succeed);
+        video.removeEventListener('error', fallback);
+      };
+      const timer = setTimeout(fallback, 20000);
+      video.addEventListener('loadedmetadata', succeed);
+      video.addEventListener('error', fallback);
+
       artPlayerRef.current.switch = videoUrl;
       artPlayerRef.current.title = `${videoTitle} - ${
         detail?.episodes_titles[currentEpisodeIndex] ??
@@ -1538,14 +1568,17 @@ function PlayPageClient() {
               video.hls.destroy();
             }
 
-            // 不支持 MSE 的设备（如 iOS 17.1 以下）使用原生 HLS，AirPlay 同样可用
+            // 不支持 MSE 的设备（如 iOS 17.1 以下）使用原生 HLS，AirPlay 同样可用。
+            // 正在 AirPlay 投屏时也直接交给原生 HLS：电视会直接加载新地址，投屏不中断
             if (
-              !Hls.isSupported() &&
+              (!Hls.isSupported() ||
+                (video as any).webkitCurrentPlaybackTargetIsWireless) &&
               video.canPlayType('application/vnd.apple.mpegurl')
             ) {
               video.hls = undefined;
               video.disableRemotePlayback = false;
-              video.src = url;
+              video.src =
+                (blockAdEnabledRef.current && peekAirPlayUrl(url)) || url;
               return;
             }
 
@@ -1708,6 +1741,8 @@ function PlayPageClient() {
 
       // 监听播放器事件
       artPlayerRef.current.on('ready', () => {
+        setAirplayVideo(artPlayerRef.current.video as HTMLVideoElement);
+        switchFailedRef.current = false;
         setError(null);
 
         // 播放器就绪后，如果正在播放则请求 Wake Lock
@@ -1871,7 +1906,7 @@ function PlayPageClient() {
       console.error('创建播放器失败:', err);
       setError('播放器初始化失败');
     }
-  }, [Artplayer, Hls, videoUrl, loading, blockAdEnabled]);
+  }, [Artplayer, Hls, videoUrl, loading, blockAdEnabled, playerRebuild]);
 
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
   useEffect(() => {
@@ -2118,11 +2153,11 @@ function PlayPageClient() {
           >
             {/* 播放器 */}
             <div
-              className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${
+              className={`h-full flex flex-col gap-3 transition-all duration-300 ease-in-out ${
                 isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-2'
               }`}
             >
-              <div className='relative w-full h-[300px] lg:h-full'>
+              <div className='relative w-full h-[300px] lg:h-auto lg:flex-1 lg:min-h-0 rounded-xl border border-white/0 dark:border-white/30'>
                 <div
                   ref={artRef}
                   className='bg-black w-full h-full rounded-xl overflow-hidden shadow-lg'
@@ -2168,6 +2203,9 @@ function PlayPageClient() {
                   </div>
                 )}
               </div>
+
+              {/* AirPlay 投屏：只在支持 AirPlay 的浏览器中显示 */}
+              <AirPlayButton video={airplayVideo} />
             </div>
 
             {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
