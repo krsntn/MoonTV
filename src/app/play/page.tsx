@@ -25,6 +25,7 @@ import { isTitleMatch, pickPreferredVersion } from '@/lib/title-match';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
+import AirPlayButton from '@/components/AirPlayButton';
 import EpisodeSelector from '@/components/EpisodeSelector';
 import PageLayout from '@/components/PageLayout';
 
@@ -181,6 +182,13 @@ function PlayPageClient() {
   const lastSaveTimeRef = useRef<number>(0);
 
   const artPlayerRef = useRef<any>(null);
+  // 当前播放器的 video 元素，供 AirPlay 按钮监听投屏状态
+  const [airplayVideo, setAirplayVideo] = useState<HTMLVideoElement | null>(
+    null
+  );
+  // 原地切换地址失败后改为重建播放器
+  const switchFailedRef = useRef(false);
+  const [playerRebuild, setPlayerRebuild] = useState(0);
   const artRef = useRef<HTMLDivElement | null>(null);
 
   // Wake Lock 相关
@@ -1464,8 +1472,28 @@ function PlayPageClient() {
     const isWebkit =
       typeof window !== 'undefined' && /AppleWebKit/.test(navigator.userAgent);
 
-    // 非WebKit浏览器且播放器已存在，使用switch方法切换
-    if (!isWebkit && artPlayerRef.current) {
+    // 播放器已存在时在同一个 video 元素上切换地址：AirPlay 投屏会延续到下一集。
+    // 切换后 20 秒内没有加载出视频，或者出错，就改为重建播放器
+    if (artPlayerRef.current && !switchFailedRef.current) {
+      const art = artPlayerRef.current;
+      const video = art.video as HTMLVideoElement;
+      const fallback = () => {
+        clearTimeout(timer);
+        video.removeEventListener('loadedmetadata', succeed);
+        video.removeEventListener('error', fallback);
+        console.warn('原地切换失败，重建播放器');
+        switchFailedRef.current = true;
+        setPlayerRebuild((count) => count + 1);
+      };
+      const succeed = () => {
+        clearTimeout(timer);
+        video.removeEventListener('loadedmetadata', succeed);
+        video.removeEventListener('error', fallback);
+      };
+      const timer = setTimeout(fallback, 20000);
+      video.addEventListener('loadedmetadata', succeed);
+      video.addEventListener('error', fallback);
+
       artPlayerRef.current.switch = videoUrl;
       artPlayerRef.current.title = `${videoTitle} - ${
         detail?.episodes_titles[currentEpisodeIndex] ??
@@ -1538,9 +1566,11 @@ function PlayPageClient() {
               video.hls.destroy();
             }
 
-            // 不支持 MSE 的设备（如 iOS 17.1 以下）使用原生 HLS，AirPlay 同样可用
+            // 不支持 MSE 的设备（如 iOS 17.1 以下）使用原生 HLS，AirPlay 同样可用。
+            // 正在 AirPlay 投屏时也直接交给原生 HLS：电视会直接加载新地址，投屏不中断
             if (
-              !Hls.isSupported() &&
+              (!Hls.isSupported() ||
+                (video as any).webkitCurrentPlaybackTargetIsWireless) &&
               video.canPlayType('application/vnd.apple.mpegurl')
             ) {
               video.hls = undefined;
@@ -1708,6 +1738,8 @@ function PlayPageClient() {
 
       // 监听播放器事件
       artPlayerRef.current.on('ready', () => {
+        setAirplayVideo(artPlayerRef.current.video as HTMLVideoElement);
+        switchFailedRef.current = false;
         setError(null);
 
         // 播放器就绪后，如果正在播放则请求 Wake Lock
@@ -1871,7 +1903,7 @@ function PlayPageClient() {
       console.error('创建播放器失败:', err);
       setError('播放器初始化失败');
     }
-  }, [Artplayer, Hls, videoUrl, loading, blockAdEnabled]);
+  }, [Artplayer, Hls, videoUrl, loading, blockAdEnabled, playerRebuild]);
 
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
   useEffect(() => {
@@ -2118,11 +2150,11 @@ function PlayPageClient() {
           >
             {/* 播放器 */}
             <div
-              className={`h-full transition-all duration-300 ease-in-out rounded-xl border border-white/0 dark:border-white/30 ${
+              className={`h-full flex flex-col gap-3 transition-all duration-300 ease-in-out ${
                 isEpisodeSelectorCollapsed ? 'col-span-1' : 'md:col-span-2'
               }`}
             >
-              <div className='relative w-full h-[300px] lg:h-full'>
+              <div className='relative w-full h-[300px] lg:h-auto lg:flex-1 lg:min-h-0 rounded-xl border border-white/0 dark:border-white/30'>
                 <div
                   ref={artRef}
                   className='bg-black w-full h-full rounded-xl overflow-hidden shadow-lg'
@@ -2168,6 +2200,9 @@ function PlayPageClient() {
                   </div>
                 )}
               </div>
+
+              {/* AirPlay 投屏：只在支持 AirPlay 的浏览器中显示 */}
+              <AirPlayButton video={airplayVideo} />
             </div>
 
             {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
