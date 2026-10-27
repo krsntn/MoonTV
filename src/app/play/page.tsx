@@ -8,6 +8,7 @@ import { Heart } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
+import { getAirPlayUrl, peekAirPlayUrl } from '@/lib/airplay.client';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -21,6 +22,7 @@ import {
   saveSkipConfig,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { removeAdBlocks } from '@/lib/m3u8';
 import { isTitleMatch, pickPreferredVersion } from '@/lib/title-match';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -424,15 +426,22 @@ function PlayPageClient() {
     const airplaySources = Array.from(
       video.querySelectorAll<HTMLSourceElement>('source[data-airplay]')
     );
-    const existed = airplaySources.some((s) => s.getAttribute('src') === url);
+    const existed = airplaySources.some((s) => s.dataset.origin === url);
     if (!existed) {
       // 只移除旧的 AirPlay 备选源，保持唯一
       airplaySources.forEach((s) => s.remove());
       const sourceEl = document.createElement('source');
       sourceEl.type = 'application/x-mpegURL';
-      sourceEl.src = url;
+      // 开启去广告时，电视使用本站去除广告后的播放列表；链接取到之前先用原始地址
+      sourceEl.src = (blockAdEnabledRef.current && peekAirPlayUrl(url)) || url;
       sourceEl.dataset.airplay = 'true';
+      sourceEl.dataset.origin = url;
       video.appendChild(sourceEl);
+      if (blockAdEnabledRef.current && sourceEl.src === url) {
+        getAirPlayUrl(url).then((airplayUrl) => {
+          if (sourceEl.isConnected) sourceEl.src = airplayUrl;
+        });
+      }
     }
 
     // 始终允许远程播放（AirPlay / Cast）
@@ -491,25 +500,6 @@ function PlayPageClient() {
   };
 
   // 去广告相关函数
-  function filterAdsFromM3U8(m3u8Content: string): string {
-    if (!m3u8Content) return '';
-
-    // 按行分割M3U8内容
-    const lines = m3u8Content.split('\n');
-    const filteredLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // 只过滤#EXT-X-DISCONTINUITY标识
-      if (!line.includes('#EXT-X-DISCONTINUITY')) {
-        filteredLines.push(line);
-      }
-    }
-
-    return filteredLines.join('\n');
-  }
-
   // 跳过片头片尾配置相关函数（设置菜单暂时关闭，保留以便恢复）
   // eslint-disable-next-line unused-imports/no-unused-vars
   const handleSkipConfigChange = async (newConfig: {
@@ -631,8 +621,11 @@ function PlayPageClient() {
           ) {
             // 如果是m3u8文件，处理内容以移除广告分段
             if (response.data && typeof response.data === 'string') {
-              // 过滤掉广告段 - 实现更精确的广告过滤逻辑
-              response.data = filterAdsFromM3U8(response.data);
+              // 去除插入的广告片段（与 AirPlay 播放列表使用同一规则）
+              response.data = removeAdBlocks(
+                response.data,
+                response.url || context.url
+              );
             }
             return onSuccess(response, stats, context, null);
           };
@@ -646,6 +639,15 @@ function PlayPageClient() {
   // 当集数索引变化时自动更新视频地址
   useEffect(() => {
     updateVideoUrl(detail, currentEpisodeIndex);
+  }, [detail, currentEpisodeIndex]);
+
+  // 预先获取当前集和下一集的 AirPlay 播放列表链接，投屏中换集时可以直接使用
+  useEffect(() => {
+    if (!blockAdEnabledRef.current || !detail?.episodes) return;
+    [currentEpisodeIndex, currentEpisodeIndex + 1].forEach((index) => {
+      const url = detail.episodes[index];
+      if (url) getAirPlayUrl(url);
+    });
   }, [detail, currentEpisodeIndex]);
 
   // 进入页面时直接获取全部源信息
@@ -1575,7 +1577,8 @@ function PlayPageClient() {
             ) {
               video.hls = undefined;
               video.disableRemotePlayback = false;
-              video.src = url;
+              video.src =
+                (blockAdEnabledRef.current && peekAirPlayUrl(url)) || url;
               return;
             }
 

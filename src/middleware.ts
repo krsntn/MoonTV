@@ -137,6 +137,7 @@ function shouldSkipAuth(pathname: string): boolean {
 // 配置middleware匹配规则
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/register|api/logout|api/cron|api/server-config).*)',
+    // api/airplay/playlist：电视通过 AirPlay 请求，没有登录 Cookie，由路由自己校验签名
+    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/register|api/logout|api/cron|api/server-config|api/airplay/playlist).*)',
   ],
 };
