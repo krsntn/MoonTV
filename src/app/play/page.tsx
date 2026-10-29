@@ -190,6 +190,8 @@ function PlayPageClient() {
   );
   // 原地切换地址失败后改为重建播放器
   const switchFailedRef = useRef(false);
+  // 当前播放器加载的 Source（source+id）；换源时重建播放器
+  const playerSourceRef = useRef('');
   const [playerRebuild, setPlayerRebuild] = useState(0);
   const artRef = useRef<HTMLDivElement | null>(null);
 
@@ -1474,9 +1476,15 @@ function PlayPageClient() {
     const isWebkit =
       typeof window !== 'undefined' && /AppleWebKit/.test(navigator.userAgent);
 
-    // 播放器已存在时在同一个 video 元素上切换地址：AirPlay 投屏会延续到下一集。
-    // 切换后 20 秒内没有加载出视频，或者出错，就改为重建播放器
-    if (artPlayerRef.current && !switchFailedRef.current) {
+    // 同一 Source 内换集：在同一个 video 元素上切换地址，AirPlay 投屏会延续到下一集。
+    // 切换后 20 秒内没有加载出视频，或者出错，就改为重建播放器。
+    // 换源时总是重建播放器：上一个 Source 投屏失败的状态不能带到新的 Source
+    const sourceKey = `${currentSourceRef.current}+${currentIdRef.current}`;
+    if (
+      artPlayerRef.current &&
+      !switchFailedRef.current &&
+      playerSourceRef.current === sourceKey
+    ) {
       const art = artPlayerRef.current;
       const video = art.video as HTMLVideoElement;
       const fallback = () => {
@@ -1511,10 +1519,11 @@ function PlayPageClient() {
       return;
     }
 
-    // WebKit浏览器或首次创建：销毁之前的播放器实例并创建新的
+    // 首次创建、换源或原地切换失败：销毁之前的播放器实例并创建新的
     if (artPlayerRef.current) {
       cleanupPlayer();
     }
+    playerSourceRef.current = sourceKey;
 
     try {
       // 创建新的播放器实例
@@ -1739,9 +1748,11 @@ function PlayPageClient() {
         ],
       });
 
+      // 播放器创建后立即把 video 元素交给 AirPlay 按钮，不必等视频加载完成
+      setAirplayVideo(artPlayerRef.current.video as HTMLVideoElement);
+
       // 监听播放器事件
       artPlayerRef.current.on('ready', () => {
-        setAirplayVideo(artPlayerRef.current.video as HTMLVideoElement);
         switchFailedRef.current = false;
         setError(null);
 
