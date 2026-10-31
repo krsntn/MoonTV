@@ -38,6 +38,24 @@ describe('removeAdBlocks', () => {
     expect(result.trim().endsWith('#EXT-X-ENDLIST')).toBe(true);
   });
 
+  it('keeps #EXT-X-ENDLIST when the ad block is at the end (360zy, ikunzy)', () => {
+    const playlist = [
+      HEADER,
+      segments(30, 'seg'),
+      '#EXT-X-DISCONTINUITY',
+      segments(4, '/ads/20261008/ad', 5),
+      '#EXT-X-ENDLIST',
+      '',
+    ].join('\n');
+
+    const result = removeAdBlocks(playlist, BASE);
+
+    expect(result).not.toContain('/ads/');
+    expect(result.match(/#EXTINF/g)).toHaveLength(30);
+    // 没有结束标签时 hls.js 把视频当作直播，从结尾开始播放
+    expect(result.trim().endsWith('#EXT-X-ENDLIST')).toBe(true);
+  });
+
   it('keeps playlists that use DISCONTINUITY for the video itself (rycjapi, zuidazy)', () => {
     const parts = Array.from({ length: 10 }, (_, i) =>
       segments(5, `p${i}-`, 4)
