@@ -4,6 +4,7 @@
 const AD_BLOCK_MAX_SECONDS = 60;
 
 const DISCONTINUITY = '#EXT-X-DISCONTINUITY';
+const ENDLIST = '#EXT-X-ENDLIST';
 
 interface Block {
   lines: string[];
@@ -43,6 +44,8 @@ export function removeAdBlocks(text: string, baseUrl: string): string {
 
   const lines = text.split('\n');
   const header: string[] = [];
+  // 结束标签单独保留：广告块在末尾时不能随广告一起删掉，否则播放器把视频当作直播，从结尾开始播放
+  const footer: string[] = [];
   const blocks: Block[] = [];
   let current: Block | null = null;
   let duration = 0;
@@ -57,6 +60,10 @@ export function removeAdBlocks(text: string, baseUrl: string): string {
     const trimmed = line.trim();
     if (trimmed.startsWith(DISCONTINUITY)) {
       current = newBlock();
+      continue;
+    }
+    if (trimmed.startsWith(ENDLIST)) {
+      footer.push(line);
       continue;
     }
     // 第一个片段之前的标签属于文件头
@@ -99,7 +106,7 @@ export function removeAdBlocks(text: string, baseUrl: string): string {
     .map((block) => block.lines.join('\n'))
     .filter((part) => part.length > 0)
     .join(`\n${DISCONTINUITY}\n`);
-  return [...header, body].join('\n');
+  return [...header, body, ...footer].join('\n');
 }
 
 // 把片段、密钥等地址改写为绝对地址；子播放列表（清晰度变体）交给回调处理，
