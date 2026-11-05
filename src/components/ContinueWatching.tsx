@@ -15,9 +15,14 @@ import VideoCard from '@/components/VideoCard';
 
 interface ContinueWatchingProps {
   className?: string;
+  // 播放记录加载完成（成功或失败）后调用
+  onReady?: () => void;
 }
 
-export default function ContinueWatching({ className }: ContinueWatchingProps) {
+export default function ContinueWatching({
+  className,
+  onReady,
+}: ContinueWatchingProps) {
   const [playRecords, setPlayRecords] = useState<
     (PlayRecord & { key: string })[]
   >([]);
@@ -68,6 +73,11 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    if (!loading) onReady?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   // 加载中或没有播放记录时不渲染组件：加载后才收起的骨架屏会让下方内容整体上移（CLS）
   if (loading || playRecords.length === 0) {
     return null;
@@ -103,7 +113,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
           </button>
         )}
       </div>
-      <ScrollableRow>
+      <ScrollableRow rowKey='continue-watching'>
         {playRecords.map((record) => {
           const { source, id } = parseKey(record.key);
           return (

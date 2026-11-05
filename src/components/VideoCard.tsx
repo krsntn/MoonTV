@@ -111,6 +111,13 @@ export default function VideoCard({
       ? 'movie'
       : 'tv'
     : type;
+  // 返回页面时用来找回点击过的卡片
+  const cardKey =
+    from === 'douban'
+      ? `douban-${douban_id || actualTitle}`
+      : isAggregate
+      ? `agg-${actualTitle}-${actualYear}-${actualSearchType}`
+      : `${actualSource}+${actualId}`;
 
   // 检查收藏状态函数
   const checkFavoriteStatus = useCallback(async () => {
@@ -269,6 +276,7 @@ export default function VideoCard({
   return (
     <div
       className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500]'
+      data-card-key={cardKey}
       onClick={handleClick}
     >
       {/* 图片和播放按钮 */}

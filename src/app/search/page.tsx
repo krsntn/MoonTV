@@ -12,12 +12,35 @@ import {
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { saveEntryState, useScrollRestore } from '@/lib/scroll-restore.client';
 import { SearchResult } from '@/lib/types';
 
 import FailedSourcesDisplay from '@/components/FailedSourcesDisplay';
 import PageLayout from '@/components/PageLayout';
 import SearchSuggestions from '@/components/SearchSuggestions';
 import VideoCard from '@/components/VideoCard';
+
+type FailedSource = { name: string; key: string; error: string };
+
+// 最近 10 次完成的搜索结果：后退、前进回到搜索时直接显示，列表与离开时相同
+const MAX_CACHED_SEARCHES = 10;
+const searchCache = new Map<
+  string,
+  { results: SearchResult[]; failedSources: FailedSource[] }
+>();
+
+function cacheSearch(
+  query: string,
+  results: SearchResult[],
+  failedSources: FailedSource[]
+) {
+  searchCache.delete(query);
+  searchCache.set(query, { results, failedSources });
+  if (searchCache.size > MAX_CACHED_SEARCHES) {
+    const oldest = searchCache.keys().next().value;
+    if (oldest !== undefined) searchCache.delete(oldest);
+  }
+}
 
 function SearchPageClient() {
   // 搜索历史
@@ -32,7 +55,9 @@ function SearchPageClient() {
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [failedSources, setFailedSources] = useState<{ name: string; key: string; error: string }[]>([]);
+  const [failedSources, setFailedSources] = useState<FailedSource[]>([]);
+  // 所有资源站都已返回的搜索词（流式搜索中 isLoading 在第一批结果到达时就变为 false）
+  const [doneQuery, setDoneQuery] = useState<string | null>(null);
 
   // 获取默认聚合设置
   const getDefaultAggregate = () => {
@@ -45,6 +70,15 @@ function SearchPageClient() {
 
   const [viewMode, setViewMode] = useState<'agg' | 'all'>(() =>
     getDefaultAggregate() ? 'agg' : 'all'
+  );
+
+  const urlQuery = searchParams.get('q') || '';
+  const entry = useScrollRestore(
+    urlQuery,
+    !urlQuery || doneQuery === urlQuery.trim() ? 'ready' : 'loading',
+    (state) => {
+      if (state.view === 'agg' || state.view === 'all') setViewMode(state.view);
+    }
   );
 
   // 流式搜索开关（仅读取设置中的默认值）
@@ -120,7 +154,19 @@ function SearchPageClient() {
     const query = searchParams.get('q');
     if (query) {
       setSearchQuery(query);
-      fetchSearchResults(query);
+      const cached = entry.current.isReturn
+        ? searchCache.get(query.trim())
+        : undefined;
+      if (cached) {
+        abortControllerRef.current?.abort();
+        setSearchResults(cached.results);
+        setFailedSources(cached.failedSources);
+        setShowResults(true);
+        setIsLoading(false);
+        setDoneQuery(query.trim());
+      } else {
+        fetchSearchResults(query);
+      }
       setShowSuggestions(false);
       addSearchHistory(query);
     } else {
@@ -140,6 +186,7 @@ function SearchPageClient() {
 
     try {
       setIsLoading(true);
+      setDoneQuery(null);
       setSearchResults([]);
       setFailedSources([]);
       setShowResults(true);
@@ -157,10 +204,11 @@ function SearchPageClient() {
         // 非流式：一次性获取并基于是否为空由服务端设置缓存头
         const json = await response.json();
         const finalResults = (json.aggregatedResults || []) as SearchResult[];
-        const finalFailedSources = (json.failedSources || []) as { name: string; key: string; error: string }[];
+        const finalFailedSources = (json.failedSources || []) as FailedSource[];
         setSearchResults(finalResults);
         setFailedSources(finalFailedSources);
         setIsLoading(false);
+        cacheSearch(query.trim(), finalResults, finalFailedSources);
       } else {
         // 流式：逐行解析
         if (!response.body) return;
@@ -169,6 +217,8 @@ function SearchPageClient() {
         let done = false;
         let buffer = '';
         let firstResult = true;
+        const streamedResults: SearchResult[] = [];
+        let streamedFailedSources: FailedSource[] = [];
 
         while (!done) {
           const { value, done: readerDone } = await reader.read();
@@ -185,6 +235,7 @@ function SearchPageClient() {
               try {
                 const json = JSON.parse(line);
                 if (json.pageResults && json.pageResults.length > 0) {
+                  streamedResults.push(...json.pageResults);
                   setSearchResults((prev) => [...prev, ...json.pageResults]);
                   if (firstResult) {
                     setIsLoading(false);
@@ -192,6 +243,7 @@ function SearchPageClient() {
                   }
                 }
                 if (json.failedSources) {
+                  streamedFailedSources = json.failedSources;
                   setFailedSources(json.failedSources);
                 }
               } catch (err) {
@@ -206,23 +258,28 @@ function SearchPageClient() {
           try {
             const json = JSON.parse(buffer);
             if (json.pageResults) {
+              streamedResults.push(...json.pageResults);
               setSearchResults((prev) => [...prev, ...json.pageResults]);
             }
             if (json.failedSources) {
+              streamedFailedSources = json.failedSources;
               setFailedSources(json.failedSources);
             }
           } catch (err) {
             console.warn('最后一段解析失败', err, buffer);
           }
         }
+        cacheSearch(query.trim(), streamedResults, streamedFailedSources);
       }
 
       setIsLoading(false);
+      setDoneQuery(query.trim());
 
     } catch (error: any) {
       if (error.name === 'AbortError') return; // 被取消的请求不用报错
       console.error('搜索失败', error);
       setSearchResults([]);
+      setDoneQuery(query.trim());
     }
   };
 
@@ -341,7 +398,11 @@ function SearchPageClient() {
                         type='checkbox'
                         className='sr-only peer'
                         checked={viewMode === 'agg'}
-                        onChange={() => setViewMode(viewMode === 'agg' ? 'all' : 'agg')}
+                        onChange={() => {
+                          const next = viewMode === 'agg' ? 'all' : 'agg';
+                          setViewMode(next);
+                          saveEntryState('view', next);
+                        }}
                       />
                       <div className='w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
                       <div className='absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4'></div>
