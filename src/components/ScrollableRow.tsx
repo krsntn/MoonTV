@@ -1,16 +1,22 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { useRowRestore } from '@/lib/scroll-restore.client';
+
 interface ScrollableRowProps {
   children: React.ReactNode;
   scrollDistance?: number;
+  // 返回页面时用来恢复这一行的横向位置；同一页面内唯一
+  rowKey?: string;
 }
 
 export default function ScrollableRow({
   children,
   scrollDistance = 1000,
+  rowKey,
 }: ScrollableRowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  useRowRestore(rowKey, containerRef);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -102,6 +108,7 @@ export default function ScrollableRow({
     >
       <div
         ref={containerRef}
+        data-row-key={rowKey}
         className='flex space-x-6 overflow-x-auto scrollbar-hide py-1 sm:py-2 pb-12 sm:pb-14 px-4 sm:px-6'
         onScroll={checkScroll}
       >

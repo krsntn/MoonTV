@@ -28,6 +28,7 @@ import {
   prefetchResultPage,
   ResultPage,
 } from '@/lib/listing.client';
+import { useScrollRestore } from '@/lib/scroll-restore.client';
 
 import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
 import FilterPanel from '@/components/FilterPanel';
@@ -59,6 +60,10 @@ function DoubanPageClient() {
     'loading'
   );
   const [retryCount, setRetryCount] = useState(0);
+  // status 所属的 Listing：换结果页后、新结果到达前，status 仍是上一页的
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+
+  useScrollRestore(queryKey, settledKey === queryKey ? status : 'loading');
 
   // 获取自定义分类数据
   useEffect(() => {
@@ -106,10 +111,12 @@ function DoubanPageClient() {
   useEffect(() => {
     if (!ready) return;
 
+    const key = queryKey;
     const cached = peekResultPage(query);
     if (cached) {
       setResultPage(cached);
       setStatus('ready');
+      setSettledKey(key);
       return;
     }
 
@@ -122,10 +129,13 @@ function DoubanPageClient() {
         if (cancelled) return;
         setResultPage(page);
         setStatus('ready');
+        setSettledKey(key);
       })
       .catch((err) => {
         console.error(err);
-        if (!cancelled) setStatus('error');
+        if (cancelled) return;
+        setStatus('error');
+        setSettledKey(key);
       });
 
     return () => {
