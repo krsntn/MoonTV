@@ -30,10 +30,6 @@ _Avoid_: order, ranking
 One numbered page of a Listing.
 _Avoid_: page (alone), page 2
 
-**Search**:
-The view that shows the titles from all Sources that match a typed title.
-_Avoid_: search results page, result page
-
 ### Content
 
 **Catalog**:

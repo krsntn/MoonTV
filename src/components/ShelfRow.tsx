@@ -116,7 +116,7 @@ export default function ShelfRow({ shelf }: { shelf: Shelf }) {
           暂无相关内容
         </div>
       ) : (
-        <ScrollableRow rowKey={`shelf-${title}`}>
+        <ScrollableRow>
           {status === 'loading'
             ? // 加载状态显示灰色占位数据
               Array.from({ length: 8 }).map((_, index) => (

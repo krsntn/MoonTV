@@ -11,7 +11,6 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { saveEntryState, useScrollRestore } from '@/lib/scroll-restore.client';
 import { getHomeShelves } from '@/lib/shelves';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -54,19 +53,6 @@ function HomeClient() {
   };
 
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
-  const [favoritesReady, setFavoritesReady] = useState(false);
-  // 继续观看加载前后高度不同，加载完成后才能恢复位置
-  const [continueReady, setContinueReady] = useState(false);
-
-  useScrollRestore(
-    'home',
-    (activeTab === 'home' ? continueReady : favoritesReady)
-      ? 'ready'
-      : 'loading',
-    (state) => {
-      if (state.tab === 'favorites') setActiveTab('favorites');
-    }
-  );
 
   // 处理收藏数据更新的函数
   const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
@@ -97,7 +83,6 @@ function HomeClient() {
         } as FavoriteItem;
       });
     setFavoriteItems(sorted);
-    setFavoritesReady(true);
   };
 
   // 当切换到收藏夹时加载收藏数据
@@ -138,10 +123,7 @@ function HomeClient() {
               { label: '收藏夹', value: 'favorites' },
             ]}
             active={activeTab}
-            onChange={(value) => {
-              setActiveTab(value as 'home' | 'favorites');
-              saveEntryState('tab', value);
-            }}
+            onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
           />
         </div>
 
@@ -190,7 +172,7 @@ function HomeClient() {
               <HeroCarousel />
 
               {/* 继续观看 */}
-              <ContinueWatching onReady={() => setContinueReady(true)} />
+              <ContinueWatching />
 
               {homeShelves.map((shelf) => (
                 <ShelfRow key={shelf.title} shelf={shelf} />
