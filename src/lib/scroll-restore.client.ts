@@ -38,9 +38,10 @@ function getRecords(): Map<string, EntryRecord> {
   if (!records) {
     records = new Map();
     try {
-      const saved = JSON.parse(
-        sessionStorage.getItem(STORAGE_KEY) || '[]'
-      ) as [string, EntryRecord][];
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]') as [
+        string,
+        EntryRecord
+      ][];
       saved.forEach(([id, record]) => records?.set(id, record));
     } catch {
       // sessionStorage 不可用或内容损坏时只用内存中的记录
@@ -74,10 +75,7 @@ function readEntryId(): string | undefined {
 
 function writeEntryId(id: string) {
   // state 中带有 Next.js 的 __NA，打过补丁的 replaceState 会直接写入，不触发路由
-  window.history.replaceState(
-    { ...window.history.state, [ENTRY_KEY]: id },
-    ''
-  );
+  window.history.replaceState({ ...window.history.state, [ENTRY_KEY]: id }, '');
 }
 
 function createId(): string {
