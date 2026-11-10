@@ -23,6 +23,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { removeAdBlocks } from '@/lib/m3u8';
+import { SPEED_STEP, stepSpeed } from '@/lib/speed';
 import { isTitleMatch, pickPreferredVersion } from '@/lib/title-match';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -30,6 +31,7 @@ import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 import AirPlayButton from '@/components/AirPlayButton';
 import EpisodeSelector from '@/components/EpisodeSelector';
 import PageLayout from '@/components/PageLayout';
+import SpeedButton from '@/components/SpeedButton';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -44,6 +46,24 @@ interface WakeLockSentinel {
   release(): Promise<void>;
   addEventListener(type: 'release', listener: () => void): void;
   removeEventListener(type: 'release', listener: () => void): void;
+}
+
+// 播放器设置菜单的「播放速度」只认 PLAYBACK_RATE 中的值。−0.1 / +0.1 得到列表外的
+// Speed（例如 1.4）时，ArtPlayer 找不到对应选项，把 null 交给 check 并抛错。
+// 改为显示实际的 Speed，并取消列表中的选中标记。
+function showAnySpeedInMenu(art: any) {
+  const setting = art.setting;
+  const check = setting.check.bind(setting);
+  setting.check = (item: any) => {
+    if (item) return check(item);
+    const menu = setting.find('playback-rate');
+    if (!menu) return;
+    menu.tooltip = art.playbackRate.toFixed(1);
+    (menu.selector || []).forEach((option: any) => {
+      option.default = false;
+      option.$item?.classList.remove('art-current');
+    });
+  };
 }
 
 function PlayPageClient() {
@@ -188,6 +208,8 @@ function PlayPageClient() {
   const [airplayVideo, setAirplayVideo] = useState<HTMLVideoElement | null>(
     null
   );
+  // 当前 Speed，供 −0.1 / +0.1 按钮判断是否已到上下限；播放器创建前为 null
+  const [speed, setSpeed] = useState<number | null>(null);
   // 原地切换地址失败后改为重建播放器
   const switchFailedRef = useRef(false);
   // 当前播放器加载的 Source（source+id）；换源时重建播放器
@@ -1168,6 +1190,15 @@ function PlayPageClient() {
   // ---------------------------------------------------------------------------
   // 键盘快捷键
   // ---------------------------------------------------------------------------
+  // −0.1 / +0.1 按钮和 , / . 快捷键：经由播放器设置，播放器会提示新的 Speed
+  const changeSpeed = (delta: number) => {
+    if (!artPlayerRef.current) return;
+    artPlayerRef.current.playbackRate = stepSpeed(
+      artPlayerRef.current.playbackRate,
+      delta
+    );
+  };
+
   // 处理全局快捷键
   const handleKeyboardShortcuts = (e: KeyboardEvent) => {
     // 忽略输入框中的按键事件
@@ -1269,14 +1300,7 @@ function PlayPageClient() {
     }
 
     if (e.key === '.' || e.key === ',') {
-      const curPlaybackRate = artPlayerRef.current.playbackRate;
-      const rates = Artplayer.PLAYBACK_RATE;
-      artPlayerRef.current.playbackRate =
-        rates[
-          e.key === '.'
-            ? Math.min(rates.indexOf(curPlaybackRate) + 1, rates.length - 1)
-            : Math.max(rates.indexOf(curPlaybackRate) - 1, 0)
-        ];
+      changeSpeed(e.key === '.' ? SPEED_STEP : -SPEED_STEP);
       e.preventDefault();
     }
 
@@ -1750,6 +1774,8 @@ function PlayPageClient() {
 
       // 播放器创建后立即把 video 元素交给 AirPlay 按钮，不必等视频加载完成
       setAirplayVideo(artPlayerRef.current.video as HTMLVideoElement);
+      setSpeed(artPlayerRef.current.playbackRate);
+      showAnySpeedInMenu(artPlayerRef.current);
 
       // 监听播放器事件
       artPlayerRef.current.on('ready', () => {
@@ -1786,6 +1812,7 @@ function PlayPageClient() {
       });
       artPlayerRef.current.on('video:ratechange', () => {
         lastPlaybackRateRef.current = artPlayerRef.current.playbackRate;
+        setSpeed(artPlayerRef.current.playbackRate);
       });
 
       // 监听视频可播放事件，这时恢复播放进度更可靠
@@ -2215,8 +2242,20 @@ function PlayPageClient() {
                 )}
               </div>
 
-              {/* AirPlay 投屏：只在支持 AirPlay 的浏览器中显示 */}
-              <AirPlayButton video={airplayVideo} />
+              {/* Speed −0.1 / +0.1 和 AirPlay 投屏（AirPlay 只在支持的浏览器中显示） */}
+              <div className='flex shrink-0 gap-2'>
+                <SpeedButton
+                  speed={speed}
+                  delta={-SPEED_STEP}
+                  onClick={() => changeSpeed(-SPEED_STEP)}
+                />
+                <AirPlayButton video={airplayVideo} />
+                <SpeedButton
+                  speed={speed}
+                  delta={SPEED_STEP}
+                  onClick={() => changeSpeed(SPEED_STEP)}
+                />
+              </div>
             </div>
 
             {/* 选集和换源 - 在移动端始终显示，在 lg 及以上可折叠 */}
