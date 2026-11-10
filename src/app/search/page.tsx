@@ -92,7 +92,7 @@ function SearchPageClient() {
       setSearchHistory(newHistory);
     });
 
-    const getScrollTop = () => document.body.scrollTop || 0;
+    const getScrollTop = () => window.scrollY || 0;
     let isRunning = false;
     const checkScrollPosition = () => {
       if (!isRunning) return;
@@ -107,12 +107,12 @@ function SearchPageClient() {
       const scrollTop = getScrollTop();
       setShowBackToTop(scrollTop > 300);
     };
-    document.body.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       unsubscribe();
       isRunning = false;
-      document.body.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -270,9 +270,9 @@ function SearchPageClient() {
 
   const scrollToTop = () => {
     try {
-      document.body.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
-      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
     }
   };
 

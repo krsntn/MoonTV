@@ -17,10 +17,13 @@
   --foreground-rgb: 255, 255, 255;
 }
 
+/* 由页面（window）滚动，不给 html/body 固定高度：浏览器返回或刷新时才能恢复滚动位置 */
+html {
+  overflow-x: hidden;
+}
+
 html,
 body {
-  height: 100%;
-  overflow-x: hidden;
   /* 阻止 iOS Safari 拉动回弹 */
   overscroll-behavior: none;
 }

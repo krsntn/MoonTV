@@ -32,7 +32,8 @@ export const RETRY_DELAYS = [1000, 3000];
 // 原因：豆瓣会对 Vercel 的出口限流数分钟，期间服务器请求全部超时，浏览器自己的网络不受影响
 export const MIRROR_RETRY_DELAYS = [0, 1000];
 
-const CACHE_TTL = 30 * 60 * 1000;
+// 看完一部电影再返回时仍命中缓存：不重新请求，浏览器也能恢复滚动位置。刷新页面会清空缓存
+const CACHE_TTL = 6 * 60 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 50;
 
 interface CacheEntry {
