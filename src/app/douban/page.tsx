@@ -139,9 +139,9 @@ function DoubanPageClient() {
       navigate({ ...query, page });
 
       try {
-        document.body.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch {
-        document.body.scrollTop = 0;
+        window.scrollTo(0, 0);
       }
     },
     [query, navigate]
