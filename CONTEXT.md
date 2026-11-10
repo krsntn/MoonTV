@@ -7,7 +7,7 @@ krsnTV is a video browsing and playback app. It shows titles from a Catalog and 
 ### Browsing
 
 **Channel**:
-One content type that a viewer can browse: 电影, 电视剧, 综艺, or 动漫.
+One content type that a viewer can browse: 电影, 剧集, 动漫, 综艺, or 自定义 (only when the admin has set custom categories).
 _Avoid_: type, category, section
 
 **Shelf**:
