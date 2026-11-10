@@ -39,3 +39,9 @@ _Avoid_: data source, douban (as a general term)
 **Source**:
 One video resource site that supplies playable episodes for a title.
 _Avoid_: API site, 资源站, provider
+
+### Playback
+
+**Speed**:
+How fast a video plays, as a multiple of normal speed (1.0×).
+_Avoid_: rate, playback rate

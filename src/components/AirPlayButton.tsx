@@ -64,8 +64,9 @@ export default function AirPlayButton({ video }: AirPlayButtonProps) {
   };
 
   const disabled = !video || (!available && !wireless);
+  // 两侧有 Speed 按钮，标签要在手机宽度下保持一行
   const label = wireless
-    ? '正在 AirPlay 播放 · 点击切换设备'
+    ? 'AirPlay 播放中'
     : available
     ? 'AirPlay 投屏'
     : '未找到 AirPlay 设备';
@@ -74,7 +75,7 @@ export default function AirPlayButton({ video }: AirPlayButtonProps) {
     <button
       onClick={handleClick}
       disabled={disabled}
-      className={`flex w-full shrink-0 items-center justify-center gap-2 rounded-xl py-3 text-base font-medium transition-colors duration-200 ${
+      className={`flex flex-[2] items-center justify-center gap-2 whitespace-nowrap rounded-xl py-3 text-base font-medium transition-colors duration-200 ${
         wireless
           ? 'bg-green-500 text-white hover:bg-green-600'
           : disabled
