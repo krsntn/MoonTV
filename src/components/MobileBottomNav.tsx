@@ -86,15 +86,12 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
         minHeight: 'calc(3.5rem + env(safe-area-inset-bottom))',
       }}
     >
-      <ul className='flex items-center overflow-x-auto scrollbar-hide'>
+      {/* 所有项目平分一行，一眼看全，不需要横向滑动 */}
+      <ul className='flex items-center'>
         {navItems.map((item) => {
           const active = isActive(item.href);
           return (
-            <li
-              key={item.href}
-              className='flex-shrink-0'
-              style={{ width: '20vw', minWidth: '20vw' }}
-            >
+            <li key={item.href} className='min-w-0 flex-1'>
               <Link
                 href={item.href}
                 className='flex flex-col items-center justify-center w-full h-14 gap-1 text-xs'
